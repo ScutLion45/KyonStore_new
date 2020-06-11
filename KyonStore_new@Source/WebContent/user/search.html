@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <base href="../">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>KyonStore Search</title>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/elem-index.css">
+  <!-- import jQuery -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- import Vue before Element -->
+  <script src="js/vue-2.6.10.min.js"></script>
+  <!-- import axios -->
+  <script src="js/axios-0.19.0.min.js"></script>
+  <!-- import JavaScript -->
+  <script src="js/elem-index.js"></script>
+  <!-- import global.js -->
+  <script src="js/global.js"></script>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/user/index.css">  <!-- search-div，goods-card样式 -->
+  <link rel="stylesheet" href="css/user/search.css">
+</head>
+<body>
+  <div id="user-search">
+    <!-- [main:search]当前登录用户:{{getSessUser()===null?'null':getSessUser().uName}} -->
+    <div id="pub-info" v-if="getPubRecord()!==null">
+      <el-tooltip effect="dark" placement="top-start" :content="getPubRecord().pName">
+        <span class="pub-info-pName">{{ shortenStr(getPubRecord().pName, 20) }}</span>
+      </el-tooltip>
+      <span class="pub-info-pInfo">
+        {{ (getPubRecord().pInfo===''?'暂无简介':shortenStr(getPubRecord().pInfo, 45)) }}
+      </span>
+    </div>
+    <div id="search-div">
+      <div class="search-sub-div" id="search-input">
+        <el-input v-model="searchInfo.gName" size="mini"
+          class="search-gName"
+          placeholder="商品名称" :clearable="true"
+          >
+        </el-input>
+        <span id="search-btn" @click="doSearch">搜索</span>
+      </div>
+      <div class="search-sub-div" id="search-filter">
+        <el-select v-model="searchInfo.gType" placeholder="商品类型"
+          class="search-item"
+          @change="gTypeChange"
+          size="mini">
+          <el-option v-for="item in gTypeOptions" 
+            :key="item" :label="item" :value="item"
+            ></el-option>
+        </el-select>
+        <el-date-picker v-model="searchInfo.gPubTime" placeholder="发行月份"
+          class="search-item"
+          @change="gPubTimeChange"
+          value-format="yyyy-MM"
+          type="month" size="mini"
+          ></el-date-picker>
+      </div>
+    </div>
+    <div id="goods-div">
+      <div class="goods-card"
+        v-for="(item, index) in goodsList" :key="index"
+        @click="browseGoods(item)">
+        <el-image class="goods-img" fit="cover"
+          :src="item.gImg">
+          <div slot="error" class="image-slot">
+            <!-- <i class="el-icon-picture-outline"></i> -->
+            <span>{{ shortenStr(item.pub.pName, 9) }}</span>
+          </div>
+        </el-image>
+        <div class="goods-name">
+          <el-tooltip effect="dark" placement="top-start" :content="item.gName">
+            <span>{{ shortenStr(item.gName, 20) }}</span>
+          </el-tooltip>
+        </div>
+        <div class="goods-info">
+          <el-tooltip effect="dark" placement="top-start" :content="item.pub.pName">
+            <span class="goods-pub">{{ shortenStr(item.pub.pName, 9) }}</span>
+          </el-tooltip>
+          <span class="goods-time">
+            <i class="el-icon-time goods-i"></i>
+            {{ item.gPubTime.split(' ')[0] }}
+          </span>
+          <span class="goods-browse">
+            <i class="el-icon-view goods-i"></i>
+            {{ item.gBrowse }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+new Vue({
+  el: '#user-search',
+  data () {
+    return {
+      searchInfo: {
+        gType: '所有类型',  // 上传参数对应gTypeOptions的index
+        gPubTime: '',       // yyyy-MM
+        gName: '',
+      },
+      goodsList: [],
+      //pub: {}               // 从goods.html.browsePub()而来
+    }
+  },
+  methods: {
+    gTypeChange(val) {
+      // console.log('gType=>', this.searchInfo.gType)
+      this.doSearch()
+    },
+    gPubTimeChange(val) {
+      if(val===null)
+        this.searchInfo.gPubTime = ''
+      // console.log('gPubTime=>', this.searchInfo.gPubTime)
+      this.doSearch()
+    },
+    doSearch() {
+      let gType = gTypeOptions.indexOf(this.searchInfo.gType)
+      let ctx =  this
+      let params = new URLSearchParams({
+        gType: gType,
+        gPubTime: this.searchInfo.gPubTime,
+        gName: this.searchInfo.gName
+      })
+      let url = '/search-goods'
+      // if(getSessUser()!==null) params.append('uId', getSessUser().uId)
+      if(getPubRecord()!==null) {    // 查看发行方详情
+        url = '/pub-search-goods'
+        params.append('pUid', getPubRecord().pUid)
+        params.append('gState', 1)
+        params.append('isUserSearch', 1)
+      }
+      axios.post(url, params)
+      .then(function(res){
+        // console.log(res.data)
+        ctx.$nextTick(()=>{
+          ctx.goodsList = res.data.data // new
+          for(var i=0; i<ctx.goodsList.length; i++) {
+            if(ctx.goodsList[i].gImg!=='')
+              ctx.goodsList[i].gImg = 'img/goods/'+ctx.goodsList[i].gId+ctx.goodsList[i].gImg
+          }
+        })
+        // console.log(ctx.goodsList)
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'doSearch()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+// ---------------------------------------------------------------------------------------------------------
+    browseGoods(goods) {
+      // window.location.href = 'user/goods.html'
+      let ctx =  this
+      let params = new URLSearchParams({
+        // uId: getSessUser().uId,
+        gId: goods.gId
+      })
+      axios.post('/browse-goods', params)
+      .then(function(res){
+        console.log('success: ', res.data.success)
+        // ctx.$nextTick(()=>{})
+        // 将goodsList[i]的内容存入sessionStorage
+        recordGoods(goods)
+        window.location.href = 'user/goods.html'
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'browseGoods()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+      
+    },
+// ------------------------------------------------------------------------------------------------------
+     axiosUtil() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        xxx: 0
+      })
+      axios.post('/...', params)
+      .then(function(res){
+        // console.log(res.data)
+        // ctx.$nextTick(()=>{})
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    }
+  },
+  created() {
+    if(getPubRecord()!==null) {
+      // 自动调一次搜索发行方的商品
+      this.doSearch()
+    //  this.pub = getPubRecord()
+      // unRecordPub()  // 当在top点击导航搜索时销毁pubRecord()
+    }
+    console.log('in search.html.created(): pubRecord=', getPubRecord())
+  }
+})
+</script>
+</html>

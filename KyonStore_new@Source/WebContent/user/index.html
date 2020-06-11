@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <base href="../">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>KyonStore</title>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/elem-index.css">
+  <!-- import jQuery -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- import Vue before Element -->
+  <script src="js/vue-2.6.10.min.js"></script>
+  <!-- import axios -->
+  <script src="js/axios-0.19.0.min.js"></script>
+  <!-- import JavaScript -->
+  <script src="js/elem-index.js"></script>
+  <!-- import global.js -->
+  <script src="js/global.js"></script>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/user/index.css">
+  <link rel="stylesheet" href="css/user/top.css">
+  <link rel="stylesheet" href="css/user/foot.css">
+</head>
+<!-- frameset rows="60,*,45" cols="*" frameborder="no" border="0" framespacing="0">
+  <frame src="userJSP/top.jsp" name="topFrame" scrolling="No" noresize="noresize" id="topFrame" title="topFrame" />
+  <frame src="userJSP/home.jsp" name="mainFrame" scrolling="No" noresize="noresize" id="mainFrame" title="mainFrame" />
+  <frame src="userJSP/foot.jsp" name="bottomFrame" scrolling="No" noresize="noresize" id="bottomFrame" title="bottomFrame" />
+</frameset -->
+<body>
+  <el-container id="user-app">
+    <el-header id="user-header">
+      <el-container id="user-top">
+        <el-aside width="25%"><span id="KyonStoreLOGO"></span></el-aside>
+        <el-main>
+          <span :class="{
+            'top-tab': true,
+            'top-tab--active': this.page==='home'
+          }" @click="toHome">主页</span>
+          <span :class="{
+            'top-tab': true,
+            'top-tab--active': this.page==='search'
+          }" @click="toSearch">搜索</span>
+          <span :class="{
+            'top-tab': true,
+            'top-tab--active': this.page==='shoppingcart'
+          }" @click="toShoppingCart">购物车</span>
+        </el-main>
+        <el-aside width="25%" class="top-aside-R">
+          <span class="uName" @click="toMy()"
+            >{{this.currentUser===null?'':this.currentUser.uName}}</span>
+          <span class="top-aside-R-btn login"
+            @click="toLogin"
+            v-if="currentUser === null"
+            >登录</span>
+          <span class="top-aside-R-btn logout"
+            @click="logout"
+            v-if="currentUser !== null"
+            ><i class="el-icon-switch-button"></i>登出</span>
+        </el-aside>
+      </el-container>
+    </el-header>
+    <el-main id="user-main">
+      <iframe src="user/home.html" name="mainFrame" scrolling="auto" noresize="noresize" id="mainFrame" title="mainFrame" ></iframe>
+    </el-main>
+    <el-footer id="user-footer" height="60px">
+      2020 JavaWeb课程设计 ©Kyon45
+    </el-footer>
+  </el-container>
+</body>
+ <script>
+new Vue({
+  el: '#user-app',
+  data () {
+    return {
+      currentUser: null, // new，通过getCurrentUser()获取
+      page: '',
+    }
+  },
+  methods: {
+    toHome() {
+      this.page = 'home'
+      $('#mainFrame').attr('src', 'user/home.html')
+    },
+    toSearch() {
+      this.page = 'search'
+      unRecordPub() //！！！！销毁查看发行方记录
+      $('#mainFrame').attr('src', 'user/search.html')
+    },
+    toShoppingCart() {
+      // new：判断是否登录中，如果是，前往购物车；否则，跳转到登录页面
+      if(this.currentUser !== null) {
+        this.page = 'shoppingcart'
+        $('#mainFrame').attr('src', 'user/shoppingcart.html')
+      } else {
+        this.page = ''
+        window.location.href = 'login.html'
+      }
+    },
+    toMy() {
+      this.page = 'my'
+      $('#mainFrame').attr('src', 'user/my.html')
+    },
+    toLogin() {
+      this.page = ''
+      window.location.href = 'login.html'
+    },
+    // new -------------------------------------------------------------------
+    logout() {
+      // new: 登出时请求api：/logout
+      let ctx = this
+      let params = new URLSearchParams({
+        arg: 1,   // 对应用户登录arg=1，arg=2表示发行方
+      })
+      axios.post('/logout', params)
+      .then(function(res){
+        if(res.data.isLogin === 0) {
+          // 登出成功，页面跳转
+          ctx.$nextTick(()=>{
+            ctx.currentUser = null  // 清除当前登录用户
+            userLogout()
+            ctx.toLogin()
+          })
+        }
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'logout()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+      
+      /*
+      userLogout()
+      //--------------------------------------
+      this.toLogin()
+      */
+    },
+    // 增加getCurrentUser(), created时调用 => 用于设置 span.uName
+    getCurrentUser() {  // 查询当前登录的用户
+      let ctx = this
+      let params = new URLSearchParams({
+        arg: 1,   // 对应用户登录arg=1，arg=2表示发行方
+      })
+      axios.post('/get-current-user', params)
+      .then(function(res){
+        if(res.data.isLogin === 1) {  // isLogin === 2表示登录的是用户，
+          let user = res.data.user          
+          // 返回的必定是用户
+          ctx.currentUser = user
+          // }
+        } else if(res.data.isLogin === 2) {// isLogin === 2表示登录的是发行方，跳转页面
+          window.location.href = 'pub/index.html'
+        }
+        // else：如果未登录，不用强制登录
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'getCurrentUser()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+    // 
+    // -----------------------------------------------------------------------
+    axiosUtil() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        xxx: 0
+      })
+      axios.post('/...', params)
+      .then(function(res){
+        // console.log(res.data)
+        // ctx.$nextTick(()=>{})
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    }
+  },
+  created() {
+    this.page = 'home'
+    
+    // new：获取已经登录的用户  // (，并判断是否是发行方)
+    this.getCurrentUser()
+    /*
+    if(getSessUser()!==null && getSessUser().pName!==undefined) {
+      // 发行方已登录
+      window.location.href = 'pub/index.html'
+    }
+    */
+  }
+})
+</script>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <base href="../">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>KyonStore Home</title>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/elem-index.css">
+  <!-- import jQuery -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- import Vue before Element -->
+  <script src="js/vue-2.6.10.min.js"></script>
+  <!-- import axios -->
+  <script src="js/axios-0.19.0.min.js"></script>
+  <!-- import JavaScript -->
+  <script src="js/elem-index.js"></script>
+  <!-- import global.js -->
+  <script src="js/global.js"></script>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/user/index.css">  <!-- search-div，goods-card样式 -->
+  <link rel="stylesheet" href="css/user/home.css">
+</head>
+<body>
+  <div id="user-home">
+    <el-menu :default-active="activeIndex"
+      mode="horizontal"
+      class="user-home-menu"
+      @select="handleSelect">
+      <el-menu-item index="1">电影</el-menu-item>
+      <el-submenu index="2">
+        <template slot="title">{{ tabTitle[1] }}</template>
+        <el-menu-item index="2-1">剧集</el-menu-item>
+        <el-menu-item index="2-2">单集</el-menu-item>
+      </el-submenu>
+      <el-submenu index="3">
+        <template slot="title">{{ tabTitle[2] }}</template>
+        <el-menu-item index="3-1">专辑</el-menu-item>
+        <el-menu-item index="3-2">单曲</el-menu-item>
+      </el-submenu>
+      <!--el-menu-item index="4" disabled>
+        当前登录用户:{{getSessUser()===null?'null':getSessUser().uName}}
+       </el-menu-item-->
+    </el-menu>
+    <div id="goods-div">      
+      <div class="goods-card"
+        v-for="(item, index) in goodsList" :key="index"
+        @click="browseGoods(item)">
+        <el-image class="goods-img" fit="cover"
+          :src="item.gImg">
+          <div slot="error" class="image-slot">
+            <!-- <i class="el-icon-picture-outline"></i> -->
+            <span>{{ shortenStr(item.pub.pName, 9) }}</span>
+          </div>
+        </el-image>
+        <div class="goods-name">
+          <el-tooltip effect="dark" placement="top-start" :content="item.gName">
+            <span>{{ shortenStr(item.gName, 20) }}</span>
+          </el-tooltip>
+        </div>
+        <div class="goods-info">
+          <el-tooltip effect="dark" placement="top-start" :content="item.pub.pName">
+            <span class="goods-pub">{{ shortenStr(item.pub.pName, 9) }}</span>
+          </el-tooltip>
+          <span class="goods-time">
+            <i class="el-icon-time goods-i"></i>
+            {{ item.gPubTime.split(' ')[0] }}
+          </span>
+          <span class="goods-browse">
+            <i class="el-icon-view goods-i"></i>
+            {{ item.gBrowse }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+new Vue({
+  el: '#user-home',
+  data () {
+    return {
+      searchInfo: {  // home.html不提供搜索
+        gName: '',
+        gType: 1,    // 默认电影
+        gPubTime: '',
+        page: 1,
+      },
+      activeIndex: '1',
+      goodsList: [],
+      tabTitle: ['电影','影视剧','音乐'],
+      // new: user_recommend
+      rec_goodsList: [],  // 推荐的商品
+    }
+  },
+  methods: {
+    handleSelect(key, keyPath) { // 调用api查询最新商品
+      console.log('handleSelect: ', key)
+      //this.searchInfo.gType = 0
+      if (key==='1')
+        this.searchInfo.gType = 1
+      else if(key==='2-1') {
+        this.tabTitle[1] = '剧集'
+        this.searchInfo.gType = 2
+      } else if(key==='2-2') {
+        this.tabTitle[1] = '单集'
+        this.searchInfo.gType = 3
+      } else if(key==='3-1') {
+        this.tabTitle[2] = '专辑'
+        this.searchInfo.gType = 4
+      } else if(key==='3-2') {
+        this.tabTitle[2] = '单曲'
+        this.searchInfo.gType = 5
+      }
+      
+      this.doSearch()
+
+    },
+    doSearch() {      
+      // 调用api '/load-latest-goods?gType=this.searchInfo.gType'
+      let ctx =  this
+      let params = new URLSearchParams({
+        gType: this.searchInfo.gType
+      })
+      axios.post('/load-latest-goods', params)
+      .then(function(res){
+        // console.log(res.data)
+          // home.html允许未登录访问
+        ctx.$nextTick(()=>{
+          ctx.goodsList = res.data.data   // res.data: { isLogin: (0|1), data: [] }
+          for(var i=0; i<ctx.goodsList.length; i++) {
+            if(ctx.goodsList[i].gImg!=='')
+              ctx.goodsList[i].gImg = 'img/goods/'+ctx.goodsList[i].gId+ctx.goodsList[i].gImg
+          }
+          //'img/goods/'+item.gId+item.gImg
+        })
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '加载最新商品请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+    loadRecommendedGoods() {
+      // 调用api '/load-recommended-goods'
+      let ctx = this
+      let params = new URLSearchParams({
+        uId: getSessUser().uId,
+      })
+      axios.post('/load-recommended-goods', params)
+      .then(function(res){
+        ctx.$nextTick(()=>{
+          ctx.rec_goodsList = res.data
+          for(var i=0; i<ctx.rec_goodsList.length; i++) {
+            if(ctx.rec_goodsList[i].gImg!=='')
+              ctx.rec_goodsList[i].gImg = 'img/goods/'+ctx.rec_goodsList[i].gId+ctx.rec_goodsList[i].gImg
+          }
+          //'img/goods/'+item.gId+item.gImg
+        })
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '加载推荐商品请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+// ---------------------------------------------------------------------------------------------------------
+    // new：改为Session判断用户是否登录 ------------------------------------
+    // 即无论是否登录，都执行recordGoods(goods)和window.location.href = 'user/goods.html'
+    browseGoods(goods) {
+      // window.location.href = 'user/goods.html'
+      let ctx =  this
+      let params = new URLSearchParams({
+        // uId: getSessUser().uId,
+        gId: goods.gId
+      })
+      axios.post('/browse-goods', params)
+      .then(function(res){
+        console.log('success: ', res.data.success)
+        // ctx.$nextTick(()=>{})
+        // 将goodsList[i]的内容存入sessionStorage
+        recordGoods(goods)
+        window.location.href = 'user/goods.html'
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'browseGoods()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+// ---------------------------------------------------------------------------------------------------------
+    axiosUtil() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        xxx: 0
+      })
+      axios.post('/...', params)
+      .then(function(res){
+        // console.log(res.data)
+        // ctx.$nextTick(()=>{})
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    }
+  },
+  created(){
+    // 自动调一次
+    this.doSearch()
+    // console.log('created() in home.html: ', (getSessUser()===null?'null':getSessUser().uName))
+  }
+})
+</script>
+</html>

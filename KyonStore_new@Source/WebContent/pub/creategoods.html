@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <base href="../">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Pub Create Goods</title>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/elem-index.css">
+  <!-- import jQuery -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- import Vue before Element -->
+  <script src="js/vue-2.6.10.min.js"></script>
+  <!-- import axios -->
+  <script src="js/axios-0.19.0.min.js"></script>
+  <!-- import JavaScript -->
+  <script src="js/elem-index.js"></script>
+  <!-- import global.js -->
+  <script src="js/global.js"></script>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/pub/cgpf.css">
+</head>
+<body>
+  <div id="pub-creategoods">
+    <!-- [main:creategoods]当前登录发行方:{{getSessUser()===null?'null':getSessUser().pName}} -->
+    
+    <el-form :model="nGoods" ref="nGoods" :rules="rules"
+      class="pub-cgpf-form"
+      label-width="80px" size="mini">
+      <el-form-item label="商品图片" style="margin-bottom: 0;">
+        <el-upload class="upload-avatar"
+          action=""
+          :on-change="onFileChange"
+          :on-remove="onFileRemove"
+          :file-list="fileList"
+          :auto-upload="false"
+          list-type="picture-card"
+          accept="image/jpeg,image/x-png"
+          :multiple="false"
+          :limit="1">
+          <i slot="default" class="el-icon-plus"></i>
+          <!-- <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div> -->
+        </el-upload>
+        <font class="upload-avatar-tip">
+          只能上传jpg/png文件，且不超过2MB
+        </font>
+      </el-form-item>
+      <el-form-item label="商品名称" prop="gName">
+        <el-input v-model="nGoods.gName"></el-input>
+      </el-form-item>
+      <el-form-item label="商品描述" prop="gInfo">
+        <el-input v-model="nGoods.gInfo"></el-input>
+      </el-form-item>
+      <el-form-item label="商品类型" prop="gType">
+        <el-select v-model="nGoods.gType" placeholder="商品类型"
+          size="mini">
+          <el-option v-for="item in gTypeOptions.slice(1,6)" 
+            :key="item" :label="item" :value="item"
+            ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="商品单价" prop="gPrice">
+        <el-input v-model="nGoods.gPrice"></el-input>
+      </el-form-item>
+    </el-form>
+    <div class="pub-cgpf-btns">
+      <el-button type="primary" @click="submitCreateGoods('nGoods')">确定</el-button>
+      <el-button @click="resetForm('nGoods')" >重置</el-button>
+    </div>
+  </div>
+</body>
+<script>
+new Vue({
+  el: '#pub-creategoods',
+  data () {
+    return {
+      nGoods: {  // 上架新商品所需参数
+        gName: '',
+        gInfo: '',
+        gType: '',   // 上传参数对应gTypeOptions的index
+        gPrice: 0.0
+      },
+      rules: {
+        gName: [
+          { required: true, message: '请输入商品名称', trigger: 'blur' }
+        ],
+        gType: [
+          { required: true, message: '请选择商品类型', trigger: 'blur' }
+        ],
+        gPrice: [
+          { validator: checkPrice, trigger: 'blur' },
+          { required: true, message: '请输入商品单价', trigger: 'blur' },
+        ]
+      },
+  // -----------------------------------
+      fileList: [],
+      fileListCnt: 0,
+    }
+  },
+  methods: {
+// ------------------------------------------------------------------------------------------------------
+    onFileChange (file, fileList) {
+      let limit = this.$limitFile(file)
+      if(limit === 0) {  // 新上传的文件符合要求
+        this.fileList = fileList
+        this.fileListCnt = this.fileList.length
+      } else {
+        if(limit === 1)
+          this.$message.error('上传图片只能是 JPG 或 PNG 格式!')
+        else if(limit === 2)
+          this.$message.error('上传图片大小不能超过 2MB!')
+        console.log('fileList.length: ' + fileList.length)
+        fileList.pop()  // 阻止上传
+      }
+      console.log('[onFileChange]: ' + typeof fileList[0] + '| this.fileListCnt: ' + this.fileListCnt)
+    },
+    onFileRemove (file, fileList) {
+      this.fileList = fileList
+      this.fileListCnt = this.fileList.length
+      console.log('[onFileRemove]: this.fileListCnt: ' + this.fileListCnt)
+    },
+    emptyFileList() {
+      // 清空fileList
+      for(var i=0; i<this.fileList.length; i++) {
+        this.fileList.pop()
+      }
+      this.fileListCnt = this.fileList.length // =0
+    },
+    submitCreateGoods(formName) {
+      this.$refs[formName].validate ((valid) => {
+        if(valid) {
+          let ctx =  this
+            /* // ver-nonPic
+          let params = new URLSearchParams({
+            gName: this.nGoods.gName,
+            gInfo: this.nGoods.gInfo,
+            gType: gTypeOptions.indexOf(this.nGoods.gType),
+            gPrice: this.nGoods.gPrice,
+            // pUid: getSessUser().pUid
+          })
+          axios.post('/pub-create-goods', params)*/
+          let formData = new FormData()
+          if(this.fileList.length > 0) {
+            this.fileList.forEach (file => {
+              formData.append('files', file.raw)
+            })
+          }
+          formData.append('gName', this.nGoods.gName)
+          formData.append('gInfo', this.nGoods.gInfo)
+          formData.append('gType', gTypeOptions.indexOf(this.nGoods.gType))
+          formData.append('gPrice', this.nGoods.gPrice)
+          // formData.append('pUid', getSessUser().pUid)
+            
+          axios({
+            method: 'post', url: '/pub-create-goods',
+            headers: {
+              'Content-Type': 'multipart/form-data;'
+            },
+            data: formData
+          })  
+          .then(function(res){
+            // console.log(res.data)
+            if(res.data.success===1) {
+              ctx.$message({ type: 'success', message: '新商品上架成功', duration: 1500 })
+              ctx.resetForm(formName)
+              ctx.emptyFileList()
+            } else {
+              ctx.$message({ type: 'error', message: '新商品上架失败', duration: 1500 })
+              if(res.data.isLogin === 0) {
+                top.location.href = 'login.html'
+              }
+            }
+            // ctx.$nextTick(()=>{})
+          }).catch(function(err) {
+            console.log(err)
+            ctx.$message({ type: 'error', message: 'submitCreateGoods()请求失败', duration: 1000 })
+            // ctx.$nextTick(()=>{})
+          })
+        }
+      })
+    },
+    resetForm(formName) {
+      this.$refs[formName].resetFields()
+    },
+// -------------------------------------------------------------------------
+    axiosUtil() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        xxx: 0
+      })
+      axios.post('/...', params)
+      .then(function(res){
+        // console.log(res.data)
+        // ctx.$nextTick(()=>{})
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    }
+  },
+  watch: {
+    fileListCnt: function (val, oldVal) {
+      if(val >= 1) {
+        // 图片上传数量 >= 1时，不允许继续上传
+        let e = $(".el-upload--picture-card")
+        e.css('display','none')
+      } else {
+        let e = $(".el-upload--picture-card")
+        e.css('display','inline-block')
+      }
+    },
+  },
+  created(){
+    // console.log('created() in creategoods.html: ', (getSessUser()===null?'null':getSessUser().pName))
+    console.log(gTypeOptions.slice(1,6))
+  }
+})
+</script>
+</html>

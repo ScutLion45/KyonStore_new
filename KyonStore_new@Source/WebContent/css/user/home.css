@@ -1,0 +1,23 @@
+body {
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+#user-home {
+  text-align: center;
+  width: 100%;
+  /*overflow: hidden;
+  position: fixed;
+  z-index: 3;*/
+}
+
+#user-home .user-home-menu {
+  text-align: center;
+}
+#user-home .el-menu-item, #user-home .el-submenu {
+  float: none;
+  display: inline-block;
+}
+
+

@@ -1,0 +1,34 @@
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+#pub-app {
+  height: 100%;
+}
+#pub-app #pub-header {
+  padding: 0 !important;
+}
+#pub-app .pub-main {
+  padding: 0 !important;
+  text-align: center;
+}
+#pub-app .pub-main-container {
+  height: 100%;
+}
+#pub-app #pub-nav {
+  background-color: #826fbe;
+}
+#pub-app #pub-main iframe {
+  border: 0 !important;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}

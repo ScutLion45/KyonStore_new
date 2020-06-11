@@ -1,0 +1,73 @@
+body {
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+#pub-creategoods, #pub-profile {
+  text-align: center;
+  padding-top: 30px;
+}
+
+.pub-cgpf-form, .pub-cgpf-btns {
+  
+  width: 60%;
+  margin: auto;
+  
+  text-align: center;
+}
+
+.pub-cgpf-form .el-select {
+  width: 100%;
+}
+
+
+/* 图片上传缩略图 */
+#pub-creategoods .upload-avatar-tip {
+  font-family: 'NotoSansHans-Regular';
+  font-size: 12px;
+  color: #bdbdbd;
+  user-select: none;
+
+  margin-left: 10px;
+
+  text-align: left;
+  display: block;
+}
+#pub-creategoods .upload-avatar {
+  width: 72px;
+  height: 72px;
+
+  /* margin-top: 10px; */
+  margin-left: 5px;
+
+  text-align: left;
+  display: block;
+}
+#pub-creategoods .el-upload--picture-card { /* +号上传 */
+  background-color: #fbfdff;
+  border: 1px dashed #c0ccda;
+  border-radius: 6px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  width: 72px;
+  height: 72px;
+  line-height: 79px;
+  /* vertical-align: top; */
+}
+#pub-creategoods .el-upload--picture-card i {
+  position: relative;
+  top: 22px;  /* (72-28)/2 */
+}
+#pub-creategoods .el-upload-list--picture-card .el-upload-list__item { /* 上传图片列表 */
+    overflow: hidden;
+    background-color: #fff;
+    border: 1px solid #c0ccda;
+    border-radius: 6px;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    width: 72px;
+    height: 72px;
+    margin: 0 8px 8px 0;
+    display: inline-block;
+}

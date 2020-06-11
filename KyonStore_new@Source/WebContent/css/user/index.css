@@ -1,0 +1,135 @@
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+#user-app {
+  height: 100%;
+}
+#user-app #user-header {
+  padding: 0 !important;
+}
+#user-app #user-main {
+  padding: 0 !important;
+  text-align: center;
+}
+#user-app #user-main iframe {
+  border: 0 !important;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  overflow: scroll;
+}
+
+/* -------- search-div -----------------*/
+#search-div {
+  text-align: center;
+}
+#search-div .search-sub-div {
+  text-align: center;
+  width: 60%;
+  
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
+}
+#search-div .search-item {
+  margin: 0 5px 0 5px;
+}
+#search-div .search-gName {
+  margin: 0 5px 0 5px;
+  max-width: 400px;
+}
+#search-div #search-btn {
+  cursor: pointer;
+  user-select: none;
+  margin: 0 10px 0 10px;
+  transition: all .5s;
+}
+#search-div #search-btn:hover {
+  color: #449ba4;
+}
+#search-filter .el-input__inner {
+  width: 150px;
+}
+#search-filter .el-date-editor.el-input {
+  width: 150px;
+}
+
+/* --------- .goods-card -------------- */
+#goods-div {
+  text-align: center;
+  padding: 0 50px 0 50px;
+}
+.goods-card {
+  max-width: 300px;
+  margin: 20px;
+  padding: 0;
+  /* box-shadow: 0px 0px 16px rgba(0, 0, 0, 0.2); */
+  box-shadow: 0px 0px 16px rgba(130,111,190,0.2); /* #826fbe */
+  border-radius: 4px;
+  
+  cursor: pointer;
+  
+  display: inline-block;
+  transition: all .5s;
+}
+.goods-card:hover {
+  box-shadow: 0px 0px 15px rgba(130,111,190,0.6);
+}
+/* ------------------------------ */
+.goods-card .goods-img {
+  width: 300px;
+  height: 150px;
+  border-radius: 4px 4px 0 0;
+}
+.goods-card .goods-img .image-slot {
+  width: 300px;
+  height: 85px;  /* 150-65 */
+  background: #ccc;
+  padding: 65px 0 0 0;
+}
+/* ------------------------------ */
+.goods-card .goods-name {
+  font-size: 16px;
+  padding: 15px 20px 0px 20px;
+  /*margin: 15px 0 15px 0;*/
+  transition: all .5s;
+}
+.goods-card .goods-name:hover {
+  color: #7554df;
+}
+.goods-card .goods-info {
+  font-size: 12px;
+  padding: 15px 20px 15px 20px;
+  text-align: left;
+}
+.goods-card .goods-info .goods-pub {
+  color: #666;
+  width: 110px;
+  display: inline-block;
+}
+.goods-card .goods-info .goods-i {
+  color: #bfbfbf;
+}
+.goods-card .goods-info .goods-time {
+  color: #bfbfbf;
+  width: 100px;
+  text-align: center;
+  display: inline-block;
+}
+.goods-card .goods-info .goods-browse {
+  color: #bfbfbf;
+  width: 40px;
+  text-align: center;
+  display: inline-block;
+}
+
+

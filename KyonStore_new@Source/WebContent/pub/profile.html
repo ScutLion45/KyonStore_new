@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <base href="../">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>KyonStore Home</title>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/elem-index.css">
+  <!-- import jQuery -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- import Vue before Element -->
+  <script src="js/vue-2.6.10.min.js"></script>
+  <!-- import axios -->
+  <script src="js/axios-0.19.0.min.js"></script>
+  <!-- import JavaScript -->
+  <script src="js/elem-index.js"></script>
+  <!-- import global.js -->
+  <script src="js/global.js"></script>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/pub/cgpf.css">
+</head>
+<body>
+  <div id="pub-profile">
+    <!-- [main:profile]当前登录发行方:{{getSessUser()===null?'null':getSessUser().pName}} -->
+    
+    <el-form :model="pub" ref="pub" :rules="rules"
+      class="pub-cgpf-form"
+      label-width="80px" size="mini">
+      <el-form-item label="名称">
+        <el-input v-model="pub.pName" disabled></el-input>
+      </el-form-item>
+      <el-form-item label="简介" prop="pInfo">
+        <el-input v-model="pub.pInfo"
+          placeholder="添加发行方简介"></el-input>
+      </el-form-item>
+      <el-form-item label="新密码" prop="pPwd">
+        <el-input v-model="pub.pPwd" type="password"
+          placeholder="设置新密码，留空表示不修改"></el-input>
+      </el-form-item>
+      <el-form-item label="确认密码" prop="pPwd2">
+        <el-input v-model="pub.pPwd2" type="password"
+          placeholder="确认新密码"></el-input>
+      </el-form-item>
+    </el-form>
+    <div class="pub-cgpf-btns">
+      <el-button type="primary" @click="submitEditProfile('pub')">保存</el-button>
+      <el-button @click="cancelEdit" >取消</el-button>
+    </div>
+  </div>
+</body>
+<script>
+new Vue({
+  el: '#pub-profile',
+  data () {
+    let validatePwd2 = (rule, value, callback) => {
+      if(this.pub.pPwd === '') {
+        if(value !== '') {
+          callback(new Error('请先输入新密码再确认'))
+        } else {
+          callback()
+        }
+      } else {
+        if(value !== this.pub.pPwd) {
+          callback(new Error('两次输入密码不一致'))
+        } else {
+          callback()
+        }
+      }
+    }
+    return {
+      pub: null,
+      init_pub: null,   // new：保存修改前的pub
+      rules: {
+        pPwd2: [ { validator: validatePwd2, trigger: 'blur' } ]
+      }
+    }
+  },
+  methods: {
+    submitEditProfile(formName) {
+      this.$refs[formName].validate ((valid) => {
+        if(valid) {
+          let ctx =  this
+          let pPwd = this.init_pub.pPwd   // 修改前的密码
+          if(this.pub.pPwd !== '' && this.pub.pPwd !== this.init_pub.pPwd) {  // 修改了密码
+            pPwd = this.pub.pPwd
+          }
+          let params = new URLSearchParams({
+            // pUid: getSessUser().pUid,
+            pPwd: pPwd,
+            pInfo: this.pub.pInfo
+          })
+          axios.post('/pub-edit-profile', params)
+          .then(function(res){
+            // console.log(res.data)
+            if(res.data.success===1) {
+              ctx.$message({ type: 'success', message: '资料保存成功', duration: 1500 })
+              /*let user = {
+                pUid: getSessUser().pUid,
+                pName: getSessUser().pName,
+                pPwd: pPwd,
+                pInfo: ctx.pub.pInfo
+              }
+              userLogin(user)*/
+              ctx.$nextTick(()=>{
+                // new：更新init_pub
+                // ctx.init_pub = JSON.parse(JSON.stringify(ctx.pub))
+                ctx.$set(ctx.init_pub, 'pPwd', pPwd)
+                ctx.$set(ctx.init_pub, 'pInfo', pInfo)
+                
+                ctx.pub.pPwd = ''
+                ctx.pub.pPwd2 = ''
+              })
+            } else {
+              ctx.$message({ type: 'error', message: '资料保存失败', duration: 1500 })
+              if(res.data.isLogin === 0) {
+                // 跳转到login
+                top.location.href = 'login.html'
+              }
+            }
+            // ctx.$nextTick(()=>{})
+          }).catch(function(err) {
+            console.log(err)
+            ctx.$message({ type: 'error', message: 'submitEditProfile()请求失败', duration: 1000 })
+            // ctx.$nextTick(()=>{})
+          })
+        }
+      })
+    },
+    cancelEdit() {
+      /*this.pub = {
+        pUid: getSessUser().pUid,
+        pName: getSessUser().pName,
+        pInfo: getSessUser().pInfo,
+        pPwd: '',
+        pPwd2: ''  // 确认密码
+      }*/
+      this.pub = {
+        pUid: this.init_pub.pUid,
+        pName: this.init_pub.pName,
+        pInfo: this.init_pub.pInfo,
+        pPwd: '',
+        pPwd2: ''  // 确认密码
+      }
+    },
+    // 增加getCurrentPub(), created时调用 => 用于设置 this.pub
+    getCurrentPub() {  // 获取当前登录的用户
+      let ctx = this
+      let params = new URLSearchParams({
+        arg: 2,   // 对应发行方登录arg=2，arg=1表示用户
+      })
+      axios.post('/get-current-user', params)
+      .then(function(res){
+        if(res.data.isLogin === 2) {
+          let user = res.data.user
+          // 返回的是用户
+          ctx.$nextTick(()=>{
+            ctx.pub = {
+              pUid: user.pUid,
+              pName: user.pName,
+              pInfo: user.pInfo,
+              pPwd: '',
+              pPwd2: '',  // 确认密码
+            }
+            // 深复制一份
+            ctx.init_pub = JSON.parse(JSON.stringify(ctx.pub)) 
+          })
+        } else {
+          top.location.href = 'login.html'
+        }
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'getCurrentPub()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+// -------------------------------------------------------------------------
+    axiosUtil() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        xxx: 0
+      })
+      axios.post('/...', params)
+      .then(function(res){
+        // console.log(res.data)
+        // ctx.$nextTick(()=>{})
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    }
+  },
+  created(){
+    this.getCurrentPub()
+    
+    /*
+    this.pub = {
+      pUid: getSessUser().pUid,
+      pName: getSessUser().pName,
+      pInfo: getSessUser().pInfo,
+      pPwd: '',
+      pPwd2: ''  // 确认密码
+    }
+    console.log('getSessUser()', JSON.stringify(getSessUser()))
+    console.log('created() in profile.html: ', (getSessUser()===null?'null':getSessUser().pName))
+    */
+  }
+})
+</script>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>KyonStore 登录-注册</title>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/elem-index.css">
+  <!-- import jQuery -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- import Vue before Element -->
+  <script src="js/vue-2.6.10.min.js"></script>
+  <!-- import axios -->
+  <script src="js/axios-0.19.0.min.js"></script>
+  <!-- import JavaScript -->
+  <script src="js/elem-index.js"></script>
+  <!-- import global.js -->
+  <script src="js/global.js"></script>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+  <div id="login-reg-main">
+    <el-container style="height: 100%">
+      <el-aside width="50%" style="height: 100%"></el-aside>
+      <el-main style="height: 100%">
+        <div id="top-switch">
+          <span :class="{
+              'top-switch': true,
+              'top-switch--active': this.mode<2
+            }"
+            @click="modeSwitch(0)">
+            用户{{ modeStr[this.mode%2] }}</span>
+          <span :class="{
+              'top-switch': true,
+              'top-switch--active': this.mode>=2
+            }"
+            @click="modeSwitch(1)">
+            发行方{{ this.modeStr[this.mode%2] }}</span>
+        </div>
+        <div class="lr-main" id="login-main" v-show="mode%2===0">
+          <div id="login-inputs" class="login-reg-inputs">
+            <div id="login-name" class="login-reg-input-div">
+              <input type="text"
+                class="login-reg-input login-input-name"
+                v-model="loginInfo.name"
+                :placeholder="mode<2?'用户名':'发行方名'"
+                @keydown.enter="$event.target.blur" @blur="loginCheckName"
+                @input="loginInputName"
+              ><span class="valid-span valid-name"></span> <!-- @keydown.enter和@blur同时 -->
+            </div>
+            <div id="login-pwd" class="login-reg-input-div">
+              <input type="password"
+                class="login-reg-input login-input-pwd"
+                v-model="loginInfo.pwd"
+                placeholder="密码"
+                @keydown.enter="submitLogin"
+                @input="loginInputPwd"
+              ><span class="valid-span valid-pwd"></span>
+            </div>
+          </div>
+          <div id="login-btns" class="login-reg-btns">
+            <span
+              :class="{
+                'login-reg-btn': true,
+                'login-btn--login': true,
+                'login-reg-btn--disabled': loginInfo.exist === 0
+              }"
+              @click="submitLogin">
+              立即登录
+            </span>
+            <span class="login-reg-btn login-btn--reg"
+              @click="toReg">
+              注册
+            </span>
+          </div>
+        </div>
+        <div class="lr-main" id="reg-main" v-show="mode%2===1">
+          <div id="reg-inputs" class="login-reg-inputs">
+            <div id="reg-name" class="login-reg-input-div">
+              <input type="text"
+                class="login-reg-input reg-input-name"
+                v-model="regInfo.name"
+                :placeholder="mode<2?'用户名':'发行方名'"
+                @keydown.enter="$event.target.blur" @blur="regCheckName"
+                @input="regInputName"
+              ><span class="valid-span valid-name"></span> <!-- @keydown.enter和@blur同时 -->
+            </div>
+            <div id="reg-attach" class="login-reg-input-div"> <!-- umail或pinfo -->
+              <input type="text"
+                class="login-reg-input reg-input-attach"
+                v-model="regInfo.attach"
+                :placeholder="mode<2?'邮箱':'简介'"
+                @keydown.enter="$event.target.blur" @blur="regCheckAttach"
+                @input="regInputAttach"
+              ><span class="valid-span valid-attach"></span>
+            </div>
+            <div id="reg-pwd" class="login-reg-input-div">
+              <input type="password"
+                class="login-reg-input reg-input-pwd"
+                v-model="regInfo.pwd"
+                placeholder="密码"
+                @keydown.enter="submitReg"
+                @input="regInputPwd"
+              ><span class="valid-span valid-pwd"></span>
+            </div>
+          </div>
+          <div id="reg-btns" class="login-reg-btns">
+            <span class="login-reg-btn reg-btn--login"
+              @click="toLogin">
+              登录
+            </span>
+            <span
+              :class="{
+                'login-reg-btn': true,
+                'reg-btn--reg': true,
+                'login-reg-btn--disabled': regInfo.nameValid === 0 || regInfo.umailValid === 0
+              }"
+              @click="submitReg">
+              立即注册
+            </span>
+          </div>
+        </div>
+      </el-main>
+    </el-container>
+  </div>
+</body>
+  <script>
+var mainVue = new Vue({
+  el: '#login-reg-main',
+  data () {
+    return {
+      mode: 0,    // 0-用户登录，1-用户注册，2-发行方登录，3-发行方注册
+      modeStr: ['登录', '注册'],
+      loginInfo: {
+        name: '',
+        pwd: '',
+        exist: 0,
+      },
+      regInfo: {
+        name: '',
+        pwd: '',
+        attach: '',    // mode=1：umail，mode=3：pinfo
+        nameValid: 0,
+        umailValid: 0,
+      },
+    }
+  },
+  methods: {
+    modeSwitch (val) { // 用户与发行方之间切换
+      // val===0，切换到用户，必须this.mode >= 2
+      // val===1，切换到发行方，必须this.mode < 2
+      if(val===0 && this.mode>=2) {          // 发行方切用户
+        if(this.mode === 2) this.mode = 0
+        if(this.mode === 3) this.mode = 1
+        this.clearLoginInfo()
+        this.clearRegInfo()
+        
+      } else if(val===1 && this.mode<2) {    // 用户切发行方
+        if(this.mode === 0) this.mode = 2
+        if(this.mode === 1) this.mode = 3
+        this.clearLoginInfo()
+        this.clearRegInfo()
+      }
+    },
+    clearLoginInfo () {
+      this.loginInfo.name = ''
+      this.loginInfo.pwd = ''
+      this.loginInfo.exist = 0
+      $('#login-main .valid-name').html('')
+      $('#login-main .valid-pwd').html('')
+    },
+    clearRegInfo () {
+      this.regInfo.name = ''
+      this.regInfo.pwd = ''
+      this.regInfo.attach = ''
+      this.regInfo.nameValid = 0
+      this.regInfo.umailValid = 0
+      $('#reg-main .valid-name').html('')
+      $('#reg-main .valid-attach').html('')
+      $('#reg-main .valid-pwd').html('')
+    },
+// 登录------------------------------------------------------------------------------
+    loginInputName () { // 输入用户/发行方名时清除提示信息
+      // this.pwd = ''
+      this.loginInfo.exist = 0
+      $('#login-main .valid-name').html('')
+      $('#login-main .valid-pwd').html('')
+    },
+    loginInputPwd () { // 输入密码时清除提示信息
+      $('#login-main .valid-pwd').html('')
+    },
+    loginCheckName () { // 调用api校验用户名是否存在，若不存在，提示
+      var var_name = this.mode<2?'用户':'发行方'
+      if(this.loginInfo.name === '') {
+        $('#login-main .valid-name').html('<i class="el-icon-error"></i>请输入'+var_name+'名')
+      } else {
+        // 调用api校验用户名是否存在
+        var ctx = this
+        var arg = this.mode<2?1:2
+        var params = new URLSearchParams({
+          name: this.loginInfo.name,
+          arg: arg
+        })
+        axios.post('/check-name', params)
+        .then(function(res) {
+          ctx.loginInfo.exist = res.data.exist
+          if(res.data.exist===0) {         // 用户/发行方名不存在，不可登录
+            $('#login-main .valid-name').html('<i class="el-icon-error"></i>'+var_name+'不存在')
+          } else if(res.data.exist===1) {  // 用户/发行方名存在，可登录
+            $('#login-main .valid-name').html('<i class="el-icon-success"></i>')
+            $('#login-main .login-input-pwd').focus()
+          }
+        }).catch(function(err) {
+          ctx.$message({ type: 'error', message: 'loginCheckName()请求失败', duration: 1000 })
+        })
+        /*this.loginInfo.exist = this.$getRandomNum(0, 1)
+        console.log('name: '+this.loginInfo.name, this.loginInfo.exist)
+        if(this.loginInfo.exist === 0) {
+          $('#login-main .valid-name').html('<i class="el-icon-error"></i>'+var_name+'名不存在')
+        } else {
+          $('#login-main .valid-name').html('<i class="el-icon-success"></i>')
+          $('#login-main .login-input-pwd').focus()
+        }*/
+      }
+    },
+    submitLogin() { // 调用api校验登录
+      if(this.loginInfo.exist > 0) {
+        if(this.loginInfo.pwd === '') {
+          $('#login-main .valid-pwd').html('<i class="el-icon-error"></i>请输入密码')
+        } else {
+          // 调用api校验密码是否正确
+          var ctx = this
+          var arg = this.mode<2?1:2
+          var params = new URLSearchParams({
+            name: this.loginInfo.name,
+            pwd: this.loginInfo.pwd,
+            arg: arg
+          })
+          axios.post('/login', params)
+          .then(function(res) {
+            if(res.data===null) {         // 密码不正确，不可登录
+              $('#login-main .valid-pwd').html('<i class="el-icon-error"></i>密码错误')
+            } else if(res.data) {  // 密码正确，跳转到相应主页
+              $('#login-main .valid-pwd').html('<i class="el-icon-success"></i>')
+              // console.log(res.data)
+              userLogin(res.data)              
+              ctx.$message({ type: 'success', message: '登录成功，正在前往主页', duration: 1500 })
+              if(ctx.mode<2) {
+                window.location.href = 'user/index.html'
+              } else {
+                window.location.href = 'pub/index.html'
+              }
+              console.log('this would not be executed')
+            }
+          }).catch(function(err) {
+            console.log(err)
+            ctx.$message({ type: 'error', message: 'loginCheckName()请求失败', duration: 1000 })
+          })
+          /*
+          var scs = this.$getRandomNum(0, 1)
+          console.log('pwd: '+this.loginInfo.pwd, scs)
+          if(scs === 0) {
+            $('#login-main .valid-pwd').html('<i class="el-icon-error"></i>密码错误')
+          } else {
+            // 重定向到/user/index.html或/pub/index.html，以下代码不会执行
+            $('#login-main .valid-pwd').html('<i class="el-icon-success"></i>')
+          }*/
+        }
+      }
+    },
+    toReg () { // 登录转注册
+      this.clearLoginInfo()
+      if(this.mode === 0) this.mode = 1
+      if(this.mode === 2) this.mode = 3
+    },
+// 注册------------------------------------------------------------------------------
+    regInputName () { // 输入用户/发行方名时清除提示信息
+      this.regInfo.nameValid = 0
+      $('#reg-main .valid-name').html('')
+      $('#reg-main .valid-attach').html('')
+      $('#reg-main .valid-pwd').html('')
+    },
+    regInputAttach () { // 输入邮箱/简介时清除提示信息
+      this.regInfo.umailValid = 0
+      $('#reg-main .valid-attach').html('')
+    },
+    regInputPwd () { // 输入密码时清除提示信息
+      $('#reg-main .valid-pwd').html('')
+    },
+    regCheckName () { // 调用api校验用户名是否存在，若存在，提示
+      var var_name = this.mode<2?'用户':'发行方'
+      if(this.regInfo.name === '') {
+        $('#reg-main .valid-name').html('<i class="el-icon-error"></i>请输入'+var_name+'名')
+      } else {
+        // 调用api校验用户名是否存在
+        var ctx = this
+        var arg = this.mode<2?1:2
+        var params = new URLSearchParams({
+          name: this.regInfo.name,
+          arg: arg
+        })
+        axios.post('/check-name', params)
+        .then(function(res){
+          if(res.data.exist===0) {         // 用户/发行方名不存在，可注册
+            ctx.regInfo.nameValid = 1
+            $('#reg-main .valid-name').html('<i class="el-icon-success"></i>')
+            $('#reg-main .reg-input-attach').focus()
+            
+          } else if(res.data.exist===1) {  // 用户/发行方名存在，不可注册
+            ctx.regInfo.nameValid = 0
+            $('#reg-main .valid-name').html('<i class="el-icon-error"></i>'+var_name+'已存在')
+          }
+        }).catch(function(err) {
+          console.log(err)
+          ctx.$message({ type: 'error', message: 'regCheckName()请求失败', duration: 1000 })
+        })
+        /*
+        this.regInfo.nameValid = this.$getRandomNum(0, 1)
+        console.log('name: '+this.regInfo.name, this.regInfo.nameValid)
+        if(this.regInfo.nameValid === 0) {
+          $('#reg-main .valid-name').html('<i class="el-icon-error"></i>'+var_name+'名已存在')
+        } else {
+          $('#reg-main .valid-name').html('<i class="el-icon-success"></i>')
+          $('#reg-main .reg-input-attach').focus()
+        }*/
+      }
+    },
+    regCheckAttach () { // 调用api校验邮箱是否存在或有效，并提示
+      var mailReg = /^[a-zA-Z0-9_-]+@([a-zA-Z0-9]+\.)+(com|cn|net|org)$/
+      if(this.mode<2) {
+        if(this.regInfo.attach === '') {
+          $('#reg-main .valid-attach').html('<i class="el-icon-error"></i>请输入有效邮箱')
+        } else if(!mailReg.test(this.regInfo.attach)) {
+          // 不是邮箱格式
+          $('#reg-main .valid-attach').html('<i class="el-icon-error"></i>请输入有效邮箱')
+        } else {
+          this.regInfo.umailValid = 1
+          $('#reg-main .valid-attach').html('<i class="el-icon-success"></i>')
+          $('#reg-main .reg-input-pwd').focus()
+/*
+          // 调用api校验邮箱是否存在
+          var ctx = this
+          var params = new URLSearchParams({
+            umail: this.regInfo.attach
+          })
+          axios.post('/check-umail', params)
+          .then(function(res){
+            if(res.data.exist===0) {         // 邮箱不存在，可注册
+              ctx.regInfo.umailValid = 1
+              $('#reg-main .valid-attach').html('<i class="el-icon-success"></i>')
+              $('#reg-main .reg-input-pwd').focus()
+            } else if(res.data.exist===1) {  // 邮箱存在，不可注册
+              ctx.regInfo.umailValid = 0
+              $('#reg-main .valid-attach').html('<i class="el-icon-error"></i>邮箱无效或已被注册')
+            }
+          }).catch(function(err) {
+            console.log(err)
+            ctx.$message({ type: 'error', message: 'regCheckAttach()请求失败', duration: 1000 })
+          })
+*/
+          /*
+          this.regInfo.umailValid = this.$getRandomNum(0, 1)
+          console.log('umail: '+this.regInfo.attach, this.regInfo.umailValid)
+          if(this.regInfo.umailValid === 0) {
+            $('#reg-main .valid-attach').html('<i class="el-icon-error"></i>邮箱无效或已被注册')
+          } else {
+            $('#reg-main .valid-attach').html('<i class="el-icon-success"></i>')
+            $('#reg-main .reg-input-pwd').focus()
+          }*/
+        }
+      } else {
+        this.regInfo.umailValid = 1 // 发行方注册，简介可为空
+      }
+    },
+    submitReg () { // 调用api注册
+      if(this.regInfo.nameValid > 0 && this.regInfo.umailValid > 0) {
+        if(this.regInfo.pwd === '') {
+          $('#reg-main .valid-pwd').html('<i class="el-icon-error"></i>请输入密码')
+        } else {
+          // 调用api注册
+          var ctx = this
+          var arg = this.mode<2?1:2
+          var params = new URLSearchParams({
+            name: this.regInfo.name,
+            pwd: this.regInfo.pwd,
+            attach: this.regInfo.attach,
+            arg: arg
+          })
+          axios.post('/reg', params)
+          .then(function(res){
+            if(res.data.success!==1) {
+              ctx.$message({ type: 'error', message: '注册失败', duration: 1000 })
+            } else {
+              // 切换到登录
+              ctx.$message({ type: 'success', message: '注册成功', duration: 2000 })
+              var regName = ctx.regInfo.name
+              ctx.toLogin()
+              ctx.loginInfo.name = regName
+            }
+          }).catch(function(err) {
+            ctx.$message({ type: 'error', message: 'submitReg()请求失败', duration: 1000 })
+          })
+          /*
+          var scs = this.$getRandomNum(0, 1)
+          console.log('pwd: '+this.regInfo.pwd, scs)
+          if(scs === 0) {
+            alert('注册失败')
+          } else {
+            // 切换到登录
+            this.toLogin()
+            this.loginInfo.name = this.regInfo.name
+          }*/
+        }
+      }      
+    },
+    toLogin () { // 注册转登录
+      this.clearRegInfo()
+      if(this.mode === 1) this.mode = 0
+      if(this.mode === 3) this.mode = 2
+    },
+    // new --------------------------------------------------
+    getCurrentLogin() {
+      let ctx = this
+      let params = new URLSearchParams({
+        arg: 3,   // 全局查询
+      })
+      axios.post('/get-current-user', params)
+      .then(function(res){
+        if(res.data.isLogin === 1) {  // isLogin === 1表示登录的是用户，跳转页面
+          window.location.href = 'user/index.html'
+          // }
+        } else if(res.data.isLogin === 2) {// isLogin === 2表示登录的是发行方，跳转页面
+          window.location.href = 'pub/index.html'
+        } // else：未登录，可继续操作
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'getCurrentLogin()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+  },
+  created() {
+    // new：查询是否有登录中的用户/发行方，如果是，跳转到对应页面
+    this.getCurrentLogin()
+    
+    
+    /*
+    var sessUser = getSessUser()
+    console.log('created() in login.html, sessUser=: ', sessUser)
+    if(sessUser!==null) {
+      if(sessUser.uName!==undefined) {
+        // 用户已登录
+        window.location.href = 'user/index.html'
+      } else if(sessUser.pName!==undefined) {
+        // 发行商已登录
+        window.location.href = 'pub/index.html'
+      }
+    }
+    */
+    // console.log('created() in login.html: ', '${sessionScope.user.uName}')
+  }
+})
+  </script>
+
+</html>

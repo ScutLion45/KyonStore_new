@@ -1,0 +1,303 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <base href="../">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>KyonStore ShoppingCart</title>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/elem-index.css">
+  <!-- import jQuery -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- import Vue before Element -->
+  <script src="js/vue-2.6.10.min.js"></script>
+  <!-- import axios -->
+  <script src="js/axios-0.19.0.min.js"></script>
+  <!-- import JavaScript -->
+  <script src="js/elem-index.js"></script>
+  <!-- import global.js -->
+  <script src="js/global.js"></script>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/user/shoppingcart.css">
+</head>
+<body>
+  <div id="user-shoppingcart">
+    <!-- [main:shoppingcart]当前登录用户:{{getSessUser()===null?'null':getSessUser().uName}} -->
+    <span class="user-balance">账户余额：{{this.uBalance}}</span>
+    <el-table :data="orderList" stripe class="orderList-table">
+      <el-table-column label="商品信息" :width="tWidths[0]">
+        <template slot-scope="scope">
+          <el-tooltip effect="dark" placement="top-start" :content="scope.row.goods.gName">
+            <span :class="{
+              'span-gInfo': true,
+              'span-gInfo--gName': true,
+              'span-gInfo--off': scope.row.goods.gState===2
+            }">
+              {{ shortenStr(scope.row.goods.gName, 23) }}
+            </span>
+          </el-tooltip>
+          <span :class="{
+            'span-gInfo': true,
+            'span-gInfo--gType': true,
+            'span-gInfo--off': scope.row.goods.gState===2
+          }">
+            [{{ gTypeOptions[scope.row.goods.gType] }}]
+          </span>
+          <span :class="{
+            'span-gInfo': true,
+            'span-gInfo--gPrice': true,
+            'span-gInfo--off': scope.row.goods.gState===2
+          }">
+            ￥{{ scope.row.goodsPrice }}/件<!--&nbsp;×&nbsp;<b>{{ scope.row.oNum }}</b>-->
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="商品状态" :width="tWidths[1]" prop="goods.gState">
+        <template slot-scope="scope">
+          <span :class="{
+              'state-on': scope.row.goods.State===1,
+              'state-off': scope.row.goods.State===2
+            }">
+            {{ gStateOptions[scope.row.goods.gState] }}
+            <!-- {{scope.row.gState}} -->
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="数量" :width="tWidths[2]"
+        :show-overflow-tooltip="true">
+        <template slot-scope="scope">
+          <b>×{{ scope.row.oNum }}</b>
+        </template>
+      </el-table-column>
+      <el-table-column label="需支付" :width="tWidths[3]"
+        :show-overflow-tooltip="true">
+        <template slot-scope="scope">
+          <b>{{ scope.row.goodsPrice * scope.row.oNum }}</b>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" :width="tWidths[4]" align="center">
+        <template slot-scope="scope">
+          <span @click="updateOrder(scope.row)"
+            v-if="scope.row.oState===1"
+            class="span-click span-click--confirm">
+            支付
+          </span>
+          <el-popover placement="top-start"
+            v-if="scope.row.oState===1"
+            width="200"
+            trigger="click"
+            @show="editPopShow(scope.row)">
+            <span class="editPopCost">金额：{{ scope.row.goodsPrice * tmpONum }}</span>
+            <el-input-number v-model="tmpONum"
+              size="mini" :min="1"
+              class="edit-order-confirm"></el-input-number>
+            <el-button type="primary" size="mini"
+              class="edit-order-confirm"
+              @click="editOrder(scope.row)">确认</el-button>
+            <span slot="reference"
+              @click="visible = !visible"
+              class="span-click span-click--edit">
+              修改
+            </span>
+          </el-popover>
+          <span @click="removeOrder(scope.row)"
+            v-if="scope.row.oState===1"
+            class="span-click span-click--remove">
+            删除
+          </span>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
+</body>
+<script>
+new Vue({
+  el: '#user-shoppingcart',
+  data () {
+    return {
+      orderList: [],
+      tWidths: [300, 100, 90, 90, 180], // 商品信息、商品状态、数量、需支付、操作
+      visible: false,
+      tmpONum: 1,
+      uBalance: 0.0,  // new：loadOrder()获取
+    }
+  },
+  methods: {
+    updateOrder(row) {
+      if(row.goodsPrice * row.oNum > this.uBalance) {
+        // 余额不足，new：uBalance从this.loadOrder()获取
+        this.$message({ type: 'warning', message: '账户余额不足', duration: 1500 })
+      } else {
+        let r = confirm('确认支付吗？')
+        if(r) {
+          let ctx =  this
+          let params = new URLSearchParams({
+            oId: row.oId,
+            arg: 2,
+            // new：用于更新session的uBalance
+            gPrice: row.goodsPrice,
+            oNum: row.oNum,
+          })
+          axios.post('/update-order', params)
+          .then(function(res){
+            // console.log(res.data)
+            if(res.data.success===1){
+              ctx.$message({ type: 'success', message: '支付成功', duration: 1500 })
+              /*
+              // 更新用户余额
+              let user = {
+                uId: getSessUser().uId,
+                uName: getSessUser().uName,
+                uMail: getSessUser().uMail,
+                uPwd: getSessUser().uPwd,
+                uBalance: getSessUser().uBalance - row.goodsPrice * row.oNum
+              }
+              userLogin(user)
+              */
+              
+              // ctx.uBalance = ctx.uBalance - row.goodsPrice * row.oNum
+              // 重新加载购物车：包含对uBalance的更新
+              ctx.loadOrder()
+            } else {
+              if(res.data.isLogin === 0) {
+                // 用户未登录（可能是Session过期）
+                ctx.$message({ type: 'error', message: '支付失败：用户未登录', duration: 1500 })
+                top.location.href = 'login.html'
+              } else {
+                ctx.$message({ type: 'error', message: '支付失败', duration: 1500 })
+              }
+            }
+            // ctx.$nextTick(()=>{})
+          }).catch(function(err) {
+            console.log(err)
+            ctx.$message({ type: 'error', message: 'updateOrder()请求失败', duration: 1000 })
+            // ctx.$nextTick(()=>{})
+          })
+        }
+      }
+    },
+    editPopShow(row) {
+      this.tmpONum = row.oNum
+      console.log('editPopShow')
+    },
+    editOrder(row) {
+      // console.log('editOrder: ', window.event.target)
+      row.oNum = this.tmpONum
+      console.log(row.oId, ': oNum=>', row.oNum)
+      // this.visible = false
+      let ctx =  this
+      let params = new URLSearchParams({
+        oId: row.oId,
+        oNum: row.oNum
+      })
+      axios.post('/user-edit-order', params)
+      .then(function(res){
+        // console.log(res.data)
+        // ctx.$nextTick(()=>{})
+        if(res.data.success===1){
+          ctx.$message({ type: 'success', message: '修改成功', duration: 1500 })
+        } else {
+          if(res.data.isLogin === 0) {
+            // 用户未登录（可能是Session过期）
+            ctx.$message({ type: 'error', message: '修改失败：用户未登录', duration: 1500 })
+            top.location.href = 'login.html'
+          } else {
+            ctx.$message({ type: 'error', message: '修改失败', duration: 1500 })
+          }
+        }
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'editOrder()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+    removeOrder(row) {
+      let r = confirm('确认从购物车删除该商品吗？')
+      if(r) {
+        let ctx =  this
+        let params = new URLSearchParams({
+          oId: row.oId
+        })
+        axios.post('/user-remove-order', params)
+        .then(function(res){
+          // console.log(res.data)
+          // ctx.$nextTick(()=>{})
+          if(res.data.success===1){
+            ctx.$message({ type: 'success', message: '删除成功', duration: 1500 })
+            // 重新加载购物车
+            ctx.loadOrder()
+          } else {
+          if(res.data.isLogin === 0) {
+            // 用户未登录（可能是Session过期）
+            ctx.$message({ type: 'error', message: '删除失败：用户未登录', duration: 1500 })
+            top.location.href = 'login.html'
+          } else {
+            ctx.$message({ type: 'error', message: '删除失败', duration: 1500 })
+          }
+        }
+        }).catch(function(err) {
+          console.log(err)
+          ctx.$message({ type: 'error', message: 'removeOrder()请求失败', duration: 1000 })
+          // ctx.$nextTick(()=>{})
+        })
+      }
+    },
+    loadOrder() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        // uId: getSessUser().uId,
+        arg: 1,
+      })
+      axios.post('/user-load-order', params)
+      .then(function(res){
+        // console.log(res.data)
+        if(res.data.isLogin === 1) {
+          // 用户已登录
+          ctx.$nextTick(()=>{
+            ctx.uBalance = res.data.uBalance  // 用户余额
+            if(res.data.orderList!==null) { // 订单列表
+              ctx.orderList = res.data.orderList
+              for(var i=0; i<ctx.orderList.length; i++) {
+                if(ctx.orderList[i].goods.gImg!=='')
+                  ctx.orderList[i].goods.gImg = 'img/goods/'+ctx.orderList[i].goods.gId+ctx.orderList[i].goods.gImg
+              }
+            }
+            else
+              ctx.orderList = []
+          })
+        } else {
+          // 用户未登录
+          ctx.$message({ type: 'warning', message: 'loadOrder()：用户未登录', duration: 3000 })
+          top.location.href = 'login.html'
+        }
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'loadOrder()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+// ------------------------------------------------------------------------------------------------------
+    axiosUtil() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        xxx: 0
+      })
+      axios.post('/...', params)
+      .then(function(res){
+        // console.log(res.data)
+        // ctx.$nextTick(()=>{})
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    }
+  },
+  created() {
+    // user/index.html设置，从「购物车按钮」进入该页面能保证用户已登录
+    this.loadOrder()
+    // this.uBalance = getSessUser().uBalance
+  }
+})
+</script>
+</html>

@@ -1,0 +1,42 @@
+body {
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+#user-search {
+  text-align: center;
+  width: 100%;
+  padding-top: 30px;
+  /*overflow: hidden;
+  position: fixed;
+  z-index: 3;*/
+}
+
+#pub-info {
+  text-align: center;
+  width: 100%;
+}
+#pub-info .pub-info-pName {
+  text-align: center;
+  width: 100%;
+  
+  font-size: 20px;
+  font-weight: 900;
+  color: #7554df; /* во-2 */
+  
+  transition: all .5s;
+  display: block;
+}
+#pub-info .pub-info-pInfo {
+  text-align: center;
+  width: 100%;
+  
+  font-size: 12px;
+  color: #aaa;
+  
+  transition: all .5s;
+  display: block;
+  
+  margin: 20px 0 20px 0;
+}

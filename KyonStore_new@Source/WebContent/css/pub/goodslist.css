@@ -1,0 +1,140 @@
+body {
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+#pub-goodslist {
+  text-align: center;
+}
+
+#pub-goodslist #search-div {
+  text-align: center;
+}
+#pub-goodslist .search-sub-div {
+  text-align: center;
+  width: 60%;
+  
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
+}
+#pub-goodslist #search-div .search-item {
+  margin: 0 5px 0 5px;
+}
+#pub-goodslist #search-div .search-gName {
+  margin: 0 5px 0 5px;
+  max-width: 400px;
+}
+#pub-goodslist #search-div #search-btn {
+  cursor: pointer;
+  user-select: none;
+  margin: 0 10px 0 10px;
+  transition: all .5s;
+}
+#pub-goodslist #search-div #search-btn:hover {
+  color: #449ba4;
+}
+#pub-goodslist #search-filter .el-input__inner {
+  width: 150px;
+}
+#pub-goodslist #search-filter .el-date-editor.el-input {
+  width: 150px;
+}
+
+/* ----------------------------------------------------- */
+#pub-goodslist #search-res-div {
+  /*width: 80%;*/
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 30px;
+}
+#pub-goodslist .el-table__header-wrapper, #pub-goodslist .el-table__body-wrapper {
+  text-align: center;
+}
+#pub-goodslist .el-table__header, #pub-goodslist .el-table__body {
+  margin: auto;
+}
+#pub-goodslist .span-click {
+  cursor: pointer;
+  transition: all .5s;
+}
+#pub-goodslist .span-edit {
+  color: #409eff;
+}
+#pub-goodslist .span-off {
+  color: #ff7967;
+  margin: 0 10px 0 10px;
+}
+#pub-goodslist .span-repo {
+  color: #449ba4;
+}
+#pub-goodslist .span-offed {
+  color: #dcdcdc;  /* grey */
+  cursor: default;
+}
+#pub-goodslist .state-on {
+  color: #0bc481;  /* green */
+}
+#pub-goodslist .state-off {
+  color: #dcdcdc;  /* grey */
+}
+
+#pub-goodslist #goodsInfo .el-dialog__body {
+  padding: 30px 20%;
+}
+#pub-goodslist #goodsInfo .el-select {
+  width: 100%;
+}
+
+/* ----------------------------------------------------- */
+/* 图片上传缩略图 */
+#pub-goodslist .upload-avatar-tip {
+  font-family: 'NotoSansHans-Regular';
+  font-size: 12px;
+  color: #bdbdbd;
+  user-select: none;
+
+  margin-left: 10px;
+
+  text-align: left;
+  display: block;
+}
+#pub-goodslist .upload-avatar {
+  width: 72px;
+  height: 72px;
+
+  /* margin-top: 10px; */
+  margin-left: 5px;
+
+  text-align: left;
+  display: block;
+}
+#pub-goodslist .el-upload--picture-card { /* +号上传 */
+  background-color: #fbfdff;
+  border: 1px dashed #c0ccda;
+  border-radius: 6px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  width: 72px;
+  height: 72px;
+  line-height: 79px;
+  /* vertical-align: top; */
+}
+#pub-goodslist .el-upload--picture-card i {
+  position: relative;
+  top: 22px;  /* (72-28)/2 */
+}
+#pub-goodslist .el-upload-list--picture-card .el-upload-list__item { /* 上传图片列表 */
+    overflow: hidden;
+    background-color: #fff;
+    border: 1px solid #c0ccda;
+    border-radius: 6px;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    width: 72px;
+    height: 72px;
+    margin: 0 8px 8px 0;
+    display: inline-block;
+}

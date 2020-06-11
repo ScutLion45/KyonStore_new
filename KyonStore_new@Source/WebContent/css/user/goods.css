@@ -1,0 +1,203 @@
+body {
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+#user-goods {
+  text-align: center;
+  width: 100%;
+  margin-top: 30px;
+  /*overflow: hidden;
+  position: fixed;
+  z-index: 3;*/
+}
+
+/* --- goods-img --- */
+#user-goods .goods-img-div {
+  width: 450px;
+  height: 450px;
+  padding: 20px;
+  
+  display: inline-block;
+  vertical-align: top;
+}
+#user-goods .goods-img {
+  width: 450px;
+  height: 450px;
+  border-radius: 4px;
+  overflow: auto;
+  
+  margin: 20px;
+  display: inline-block;
+  vertical-align: top;
+}
+#user-goods .goods-img .image-slot {
+  width: 450px;
+  height: 385px;  /* 450-65 */
+  background: #ccc;
+  padding: 65px 0 0 0;
+}
+
+/* --- goods-info --- */
+#user-goods .goods-info {
+  width: 450px;
+  height: 450px;
+  padding: 0;
+  margin: 20px;
+  
+  display: inline-block;
+  vertical-align: top;
+}
+/* --- goods-info-row-1 商品名称+单价 --- */
+#user-goods .goods-info-row-1 {
+  width: 100%;
+  height: 40px;
+  display: inline-block;
+}
+#user-goods .goods-info-row-1 .goods-name {
+  width: 60%;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 900;
+  
+  color: #7554df; /* 紫-2 */
+  display: inline-block;
+}
+#user-goods .goods-info-row-1 .goods-price {
+  width: 38%;
+  text-align: right;
+  display: inline-block;
+}
+#user-goods .goods-info-row-1 .goods-price b {
+  color: #449ba4;  /* 青 */
+  transition: all .5s;
+}
+#user-goods .goods-info-row-1 .goods-price b:hover {
+  color: #ffe492;  /* 金 */
+}
+
+/* --- goods-info-row-2 发行方+时间 --- */
+#user-goods .goods-info-row-2 {
+  width: 100%;
+  height: 40px;
+  text-align: left;
+  display: inline-block;
+  font-size: 12px;
+}
+#user-goods .goods-info-row-2 .goods-pub {
+  width: 30%;
+  text-align: left;
+  color: #666;
+  display: inline-block;
+  cursor: pointer;
+}
+#user-goods .goods-info-row-2 .goods-pub:hover {
+  color: #7554df; /* 紫-2 */
+}
+#user-goods .goods-info-row-2 .goods-time {
+  width: 68%;
+  text-align: left;
+  color: #bfbfbf;
+  display: inline-block;
+}
+#user-goods .goods-info-row-2 .goods-i {
+  color: #bfbfbf;
+}
+
+/* --- goods-info-row-3 商品简介 --- */
+#user-goods .goods-info-row-3 {
+  width: 100%;
+  text-align: left;
+  padding: 20px 0 20px 0;
+  display: inline-block;
+}
+#user-goods .goods-info-row-3 .goods-gInfo {
+  text-align: left;
+  font-size: 13px;
+  color: #666;
+}
+
+/* --- goods-info-row-4 购买数量 --- */
+#user-goods .goods-info-row-4 {
+  width: 100%;
+  height: 30px;
+  text-align: left;
+  display: inline-block;
+  padding: 20px 0 20px 0;
+  vertical-align: middle;
+}
+#user-goods .goods-info-row-4 .goods-cnt-label {
+  font-size: 13px;
+  margin-right: 10px;
+  user-select: none;
+  display: inline-block;
+  vertical-align: middle;
+}
+#user-goods .goods-info-row-4 .goods-cnt {
+  /* width: auto; */
+  display: inline-block;
+  vertical-align: middle;
+}
+.el-input-number__decrease, .el-input-number__increase {
+  height: 26px;
+}
+.el-input-number__decrease i, .el-input-number__increase i {
+  position: relative;
+  top: 7px;
+}
+#user-goods .goods-info-row-4 .goods-total {
+  font-size: 13px;
+  /* width: auto; */
+  display: inline-block;
+  vertical-align: middle;
+  font-weight: 800;
+  color: #aaa;
+  margin-left: 10px;
+}
+
+/* --- goods-info-row-5 购买/加入购物车按钮 --- */
+#user-goods .goods-info-row-5 {
+  width: 100%;
+  padding: 20px 0 20px 0;
+  
+  display: inline-block;
+}
+#user-goods .goods-info-row-5 .goods-btn {
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  
+  width: 120px;
+  /* height: 30px; */
+  border-radius: 8px;
+  
+  margin-left: 10px;
+  margin-right: 10px;
+  
+  padding: 6px 0 6px 0;
+  font-size: 13px;
+  
+  transition: all .5s;
+  display: inline-block;
+  vertical-align: middle;
+}
+#user-goods .goods-info-row-5 .goods-btn-buy {
+  color: #449ba4;
+  border: 1.5px solid #449ba4;
+}
+#user-goods .goods-info-row-5 .goods-btn-buy:hover {
+  opacity: 0.5;
+}
+#user-goods .goods-info-row-5 .goods-btn-add {
+  background: #826fbe;
+  color: #fff;
+  border: 1.5px solid;
+  border-color: #826fbe;
+}
+#user-goods .goods-info-row-5 .goods-btn-add:hover {
+  color: #7554df; /* 紫-2 */
+  background: #ffe492;  /* 金 */
+  font-weight: 900;
+  border-color: #7554df;
+}

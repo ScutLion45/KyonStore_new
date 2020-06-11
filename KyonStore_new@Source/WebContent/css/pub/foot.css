@@ -1,0 +1,16 @@
+body {
+  margin: 0;
+}
+
+#pub-footer {
+  text-align: center;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all .5s;
+  
+  padding: 20px 0 20px 0;
+  
+}
+#pub-footer:hover {
+  color: #826fbe;
+}

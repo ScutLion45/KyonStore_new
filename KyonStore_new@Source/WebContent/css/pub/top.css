@@ -1,0 +1,101 @@
+body {
+  margin: 0;
+}
+#pub-top {
+  text-align: center;
+  
+  padding: 10px 0 10px 0;
+  height: 59.9px;
+  
+  color: #fff;
+  background: #449ba4;
+}
+#pub-top .el-aside {
+  text-align: center;
+  overflow: hidden;
+}
+#pub-top .el-main {
+  text-align: center;
+  overflow: hidden;
+  padding: 7px 0 10px 0 !important;
+}
+
+#pub-top #KyonStoreLOGO {
+  margin: auto;
+  width: 192px;
+  height: 45px;
+  
+  display: block;
+  cursor: pointer;
+  
+  background-image: url('../../img/KyonStoreLOGO.png');
+  background-size: 192px 45px;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  
+  transition: all .8s;
+}
+
+#pub-top .top-tab {
+  cursor: pointer;
+  user-select: none;
+  
+  width: 100px;
+  margin: 0 50px 0 50px;
+  
+  padding-bottom: 2px;
+  border-bottom: 2.5px solid;
+  border-color: transparent;
+  
+  transition: all .5s;
+  
+}
+#pub-top .top-tab--active {
+  color: #ffe492;
+  font-weight: 800;
+  border-color: #ffe492;
+}
+#pub-top .top-tab:hover {
+  border-color: #ffd045;
+}
+
+/* pName + logout */
+#pub-top .top-aside-R {
+  padding: 7px 0 10px 0;
+}
+#pub-top .pName {
+  margin-right: 30px;
+  cursor: pointer;
+  user-select: none;
+  transition: all .5s;
+}
+#pub-top .pName:hover {
+  /* color: #ffe492; */
+  color: #d1c4fc;
+}
+#pub-top .top-aside-R-btn {
+  position: relative;
+  top: -1px;
+  
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  transition: all .8s;
+}
+#pub-top .login:hover {
+  color: #d1c4fc;
+}
+#pub-top .logout i {
+  transition: all .8s;
+  margin-right: 5px;	
+}#pub-top .logout i::after {
+  transition: all .8s;
+  margin-right: 5px;	
+}
+#pub-top .logout:hover {
+  color: #ff7967;
+}
+#pub-top .logout:hover i {
+  color: #fff;
+}

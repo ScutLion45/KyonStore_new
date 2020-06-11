@@ -1,0 +1,120 @@
+html {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#login-reg-main {
+  width: 100%;
+  height: 450px;
+  padding-top: 10%;
+  
+  display: block;
+  
+  background-image: url('../img/KyonStoreBG.png');
+  background-size: 1920px 450px;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  
+  transition: all .8s;  
+}
+
+#top-switch {
+  display: block;
+  margin-bottom: 20px;
+  /* text-align: center; */
+  padding-left: 23%;
+  color: #fff;
+  transition: all .8s; 
+}
+.top-switch {
+  cursor: pointer;
+  user-select: none;
+  margin: 20px;
+  opacity: 0.8;
+}
+.top-switch--active {
+  color: #ffd045;
+  font-weight: 900;
+  opacity: 1;
+}
+
+.lr-main {
+  display: block;
+  text-align: center;
+}
+.lr-main .login-reg-inputs {
+  /* text-align: center; */
+  /* margin: auto; */
+  height: 160px;
+}
+.lr-main .login-reg-input-div {
+  width: 80%;
+  padding-left: 15%;
+  text-align: center;
+  margin: 20px 0 20px 0;
+  /* margin-left: 150px; */
+}
+.lr-main .login-reg-input {
+  outline: none;
+  width: 210px; /* 230-2*10 */
+  padding: 0 10px 0 10px;
+  height: 27px;
+  border-radius: 4px;
+  display: inline-block;
+}
+.lr-main .login-reg-input-div span {
+  width: 210px; /* 240-2*15 */
+  padding: 0 15px 0 15px;
+  display: inline-block;
+  text-align: left;
+  
+}
+.lr-main .login-reg-input-div span .el-icon-success {
+  color: #3fdf83;
+}
+.lr-main .login-reg-input-div span .el-icon-error {
+  color: #ff7967;
+  margin-right: 10px;
+}
+.lr-main .login-reg-input-div span {
+  color: #ff7967;
+}
+
+.lr-main .login-reg-btns {
+  text-align: left;
+  padding-left: 20%;
+}
+.lr-main .login-reg-btns span {
+  cursor: pointer;
+  user-select: none;
+  color: #fff;
+  text-align: center;
+  vertical-align: middle;
+  padding: 2px 0 5px 0;
+  
+  width: 120px !important;
+  /* height: */
+  display: inline-block;
+  
+  border-radius: 15px;
+  
+  margin: 10px;
+  transition: all .8s;
+}
+.login-btn--login, .reg-btn--reg {
+  background: #ffd045;
+  font-weight: 700;
+}
+.login-reg-btn--disabled {
+  background: #e1e1e1;
+}

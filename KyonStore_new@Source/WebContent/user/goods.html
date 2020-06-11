@@ -1,0 +1,253 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <base href="../">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>KyonStore ShoppingCart</title>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/elem-index.css">
+  <!-- import jQuery -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- import Vue before Element -->
+  <script src="js/vue-2.6.10.min.js"></script>
+  <!-- import axios -->
+  <script src="js/axios-0.19.0.min.js"></script>
+  <!-- import JavaScript -->
+  <script src="js/elem-index.js"></script>
+  <!-- import global.js -->
+  <script src="js/global.js"></script>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/user/goods.css">
+</head>
+<body>
+  <div id="user-goods" v-if="getGoodsRecord()!==null">
+    <!-- [main:goods]当前登录用户:{{getSessUser()===null?'null':getSessUser().uName}}
+    <br>当前浏览商品:{{ this.goods.gName }} -->
+    <!-- <div class="goods-img-div"> -->
+      <el-image class="goods-img" fit="cover"
+        :preview-src-list="srcList"
+        :src="goods.gImg">
+        <div slot="error" class="image-slot">
+          <!-- <i class="el-icon-picture-outline"></i> -->
+          <span>{{ shortenStr(this.goods.pub.pName, 9) }}</span>
+        </div>
+      </el-image>
+    <!-- </div> -->
+    <div class="goods-info">
+      <div class="goods-info-row-1"> <!-- 商品名称+单价 -->
+        <el-tooltip effect="dark" placement="top-start" :content="this.goods.gName">
+          <span class="goods-name">{{ shortenStr(this.goods.gName, 20) }}</span>
+        </el-tooltip>
+        <span class="goods-price">￥<b>{{this.goods.gPrice}}</b>/件</span>
+      </div>
+      <div class="goods-info-row-2"> <!-- 发行方+时间 -->
+        <el-tooltip effect="dark" placement="top-start" :content="this.goods.pub.pName">
+          <span class="goods-pub" @click="browsePub">发行方：{{ shortenStr(this.goods.pub.pName, 15) }}</span>
+        </el-tooltip>
+        <span class="goods-time">
+          <i class="el-icon-time goods-i"></i>
+          {{ this.goods.gPubTime.split(' ')[0] }}
+        </span>
+      </div>
+      <div class="goods-info-row-3"> <!-- 商品简介 -->
+        <span class="goods-gInfo">
+          {{ this.goods.gInfo===''?'暂无简介':shortenStr(this.goods.gInfo, 45) }}
+        </span>
+      </div>
+      <div class="goods-info-row-4"> <!-- 购买数量 -->
+        <span class="goods-cnt-label">购买数量</span>
+        <el-input-number class="goods-cnt" v-model="cnt"
+          @change="handleCntChange"
+          size="mini" :min="1"></el-input-number>
+        <span class="goods-total">共计￥{{ this.cnt * this.goods.gPrice }}</span>
+      </div>
+      <div class="goods-info-row-5"> <!-- 购买/加入购物车按钮 -->
+        <span class="goods-btn goods-btn-buy"
+          @click="submitGoodsOrder(2)">立即购买</span>
+        <span class="goods-btn goods-btn-add"
+          @click="submitGoodsOrder(1)">加入购物车</span>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+new Vue({
+  el: '#user-goods',
+  data () {
+    return {
+      goods: {},
+      cnt: 1,
+      srcList: [],
+      // new：创建计时器
+      timer: null,
+      t_step: 30,   // 每隔t_step秒更新一次停留时间
+    }
+  },
+  methods: {
+    handleCntChange(val) {
+      console.log(val)
+    },
+    submitGoodsOrder(val) {
+      // val=1，加入购物车；val=2，立即购买
+      /*
+      if(getSessUser()===null) {
+        // 用户未登录，跳到登录页面
+        top.location.href='login.html'
+      } else if(val===2 && this.goods.gPrice*this.cnt > getSessUser().uBalance) { // 用户余额不足
+        this.$message({ type: 'warning', message: '账户余额不足', duration: 1500 })
+      } else {
+      */
+      let msgPre = val===1?'加入购物车':'购买'
+      let r = confirm('确认'+msgPre+'吗？')
+      if(r) {
+        let ctx =  this
+        let params = new URLSearchParams({
+          oNum: this.cnt,
+          gId: this.goods.gId,
+          gPrice: this.goods.gPrice,
+          // uId: getSessUser().uId,
+          arg: val,   // val=1，加入购物车；val=2，立即购买
+        })
+        axios.post('/user-create-order', params)
+        .then(function(res){
+          if(res.data.isLogin===1) {
+            // 用户登录中
+            if(res.data.success===1){
+              ctx.$message({ type: 'success', message: msgPre+'成功', duration: 1500 })
+            } else {
+              // 失败及回传的失败信息（账户余额不足等）
+              ctx.$message({ type: 'error', message: msgPre+'失败：'+res.data.failedInfo, duration: 1500 })
+            }
+          } else {
+            // 用户未登录，跳转到登录页面
+            top.location.href='login.html'
+          }
+        }).catch(function(err) {
+          console.log(err)
+          ctx.$message({ type: 'error', message: 'editOrder()请求失败', duration: 1000 })
+          // ctx.$nextTick(()=>{})
+        })
+      }
+      // }
+    },
+    __wasted__submitGoodsOrder(val) {
+      // val=1，加入购物车；val=2，立即购买
+      if(getSessUser()===null) {
+        // 用户未登录，跳到登录页面
+        top.location.href='login.html'
+      } else if(val===2 && this.goods.gPrice*this.cnt > getSessUser().uBalance) { // 用户余额不足
+        this.$message({ type: 'warning', message: '账户余额不足', duration: 1500 })
+      } else {
+        let msgPre = val===1?'加入购物车':'购买'
+        let r = confirm('确认'+msgPre+'吗？')
+        if(r) {
+          let ctx =  this
+          let params = new URLSearchParams({
+            oNum: this.cnt,
+            gId: this.goods.gId,
+            gPrice: this.goods.gPrice,
+            uId: getSessUser().uId,
+            arg: val
+          })
+          axios.post('/user-create-order', params)
+          .then(function(res){
+            // console.log(res.data)
+            // ctx.$nextTick(()=>{})
+            if(res.data.success===1){
+              ctx.$message({ type: 'success', message: msgPre+'成功', duration: 1500 })
+            } else {
+              ctx.$message({ type: 'error', message: msgPre+'失败', duration: 1500 })
+            }
+          }).catch(function(err) {
+            console.log(err)
+            ctx.$message({ type: 'error', message: 'editOrder()请求失败', duration: 1000 })
+            // ctx.$nextTick(()=>{})
+          })
+        }
+      }
+    },
+    // new: 更新商品浏览停留时间
+    // new：修改res.data的判断
+    browseGoodsStay() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        // uId: getSessUser().uId,
+        gId: this.goods.gId,
+        stay_add: this.t_step,
+      })
+      axios.post('/browse-goods-stay', params)
+      .then(function(res){
+        if(res.data.isLogin === 1) {
+          // 用户已登录
+          if(res.data.success===1){
+            // ctx.$message({ type: 'success', message: msgPre+'成功', duration: 1500 })
+          } else {
+            console.log('更新商品浏览停留时间[失败]; gid=',this.goods.gId)
+          }
+        } else {
+          // 用户未登录：清除计时器
+          ctx.$nextTick(()=>{
+            if(ctx.timer !== null) {
+              clearInterval(ctx.timer)
+              ctx.timer = null
+            }
+          })
+        }
+      }).catch(function(err) {
+        console.log(err)
+        console.log('更新商品浏览停留时间[错误]; gid=',this.goods.gId)
+        // ctx.$nextTick(()=>{})
+      })
+    },
+    
+// ---------------------------------------------------------------------------------------------------------
+    browsePub() {
+      // 将pub存入sessionStorage
+      recordPub(this.goods.pub)
+      window.location.href = 'user/search.html'; //！！！判断pubRecord()是否为空
+    },
+// ---------------------------------------------------------------------------------------------------------
+    axiosUtil() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        xxx: 0
+      })
+      axios.post('/...', params)
+      .then(function(res){
+        // console.log(res.data)
+        // ctx.$nextTick(()=>{})
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    }
+  },
+  created() {
+    // console.log(JSON.stringify(getGoodsRecord()))
+    // 不需要重复处理图片路径
+    if(getGoodsRecord()!==null) {
+      this.goods = getGoodsRecord()
+      this.srcList.push(this.goods.gImg)
+    }
+    
+    // new：创建计时器，更新商品浏览停留时间
+    console.log('[goodds.html] initialize timer')
+    this.timer = setInterval(this.browseGoodsStay, this.t_step * 1000)
+    console.log('[goodds.html] initialize timer done')
+
+  },
+  beforeDestroy() {
+    if(getGoodsRecord()!==null)
+      unRecordGoods()
+    console.log('goodsRecord has been removed')
+    
+    // new：清除计时器
+    if(this.timer!==null)
+       clearInterval(this.timer)
+    console.log('timer has been removed')
+  }
+})
+</script>
+</html>

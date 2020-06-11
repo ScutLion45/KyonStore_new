@@ -1,0 +1,485 @@
+<!DOCTYPE html userInfoLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <base href="../">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>KyonStore My</title>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/elem-index.css">
+  <!-- import jQuery -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- import Vue before Element -->
+  <script src="js/vue-2.6.10.min.js"></script>
+  <!-- import axios -->
+  <script src="js/axios-0.19.0.min.js"></script>
+  <!-- import JavaScript -->
+  <script src="js/elem-index.js"></script>
+  <!-- import global.js -->
+  <script src="js/global.js"></script>
+  <!-- import CSS -->
+  <!-- <link rel="stylesheet" href="css/user/index.css"> -->
+  <link rel="stylesheet" href="css/user/my.css">
+</head>
+<body>
+  <div id="user-my" v-if="init_userInfo!==null">
+    <el-menu :default-active="activeIndex"
+      mode="horizontal"
+      class="user-my-menu"
+      @select="handleSelect">
+      <el-menu-item index="1">个人资料</el-menu-item>
+      <el-menu-item index="2">我的足迹</el-menu-item>
+      <el-menu-item index="3">我的订单</el-menu-item>
+      <!--el-submenu index="2">
+        <template slot="title">{{ tabTitle[1] }}</template>
+        <el-menu-item index="2-1">剧集</el-menu-item>
+        <el-menu-item index="2-2">单集</el-menu-item>
+      </el-submenu>
+      <el-submenu index="3">
+        <template slot="title">{{ tabTitle[2] }}</template>
+        <el-menu-item index="3-1">专辑</el-menu-item>
+        <el-menu-item index="3-2">单曲</el-menu-item>
+      </el-submenu-->
+      <!--<el-menu-item index="4" disabled>
+        当前登录用户:{{getSessUser()===null?'null':getSessUser().uName}}
+       </el-menu-item>-->
+    </el-menu>
+    
+    <div class="user-my-main user-my-main-1" v-show="activeIndex === '1'">
+      <el-form :model="userInfo" ref="userInfo" :rules="rules"
+        class="userInfo-form"
+        label-width="80px" size="mini">
+        <el-form-item label="用户名">
+          <el-input v-model="userInfo.uName" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" prop="uMail">
+          <el-input v-model="userInfo.uMail"
+            placeholder="邮箱"></el-input>
+        </el-form-item>
+        <el-form-item label="新密码" prop="uPwd">
+          <el-input v-model="userInfo.uPwd" type="password"
+            placeholder="设置新密码，留空表示不修改"></el-input>
+        </el-form-item>
+        <el-form-item label="确认密码" prop="uPwd2">
+          <el-input v-model="userInfo.uPwd2" type="password"
+            placeholder="确认新密码"></el-input>
+        </el-form-item>
+        <el-form-item label="余额" prop="uBalance">
+          <el-input v-model="userInfo.uBalance" class="uBalance-input"
+            placeholder="余额" readonly></el-input>
+          <el-button type="success" class="uBalance-btn"
+            @click.once="randUBalance">试试手气</el-button>
+        </el-form-item>
+      </el-form>
+      <div class="userInfo-btns">
+        <el-button type="primary" @click="submitEditProfile('userInfo')">保存</el-button>
+        <el-button @click="cancelEdit" >取消</el-button>
+      </div>
+    </div>
+    
+    <div class="user-my-main user-my-main-2" v-show="activeIndex === '2'">
+      <el-table :data="browseList" stripe width="850" class="browseList-table"  v-if="activeIndex === '2'">
+        <el-table-column label="商品名称" :width="tWidths[0]" prop="goods.gName" sortable
+          :show-overflow-tooltip="true"></el-table-column>
+        <el-table-column label="类型" :width="tWidths[1]" prop="goods.gType" sortable>
+          <template slot-scope="scope">
+            <span>
+              {{ gTypeOptions[scope.row.goods.gType] }}
+              <!-- {{scope.row.gType}} -->
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="浏览时间" :width="tWidths[2]" prop="bTime" sortable></el-table-column>
+        <el-table-column label="操作" :width="tWidths[3]">
+          <template slot-scope="scope">
+            <span @click="browseGoods(scope.row.goods)"
+              :class="{
+                'span-click': true,
+                'span-edit': true,
+                'span-offed': scope.row.goods.gState===2
+              }">查看商品</span>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    
+    <div class="user-my-main user-my-main-3" v-show="activeIndex === '3'">
+      <el-table :data="orderList" stripe class="orderList-table" v-if="activeIndex === '3'">
+        <el-table-column label="订单信息" :width="oWidths[0]">
+          <template slot-scope="scope">
+            <el-tooltip effect="dark" placement="top-start" :content="scope.row.goods.gName">
+              <span class="span-gInfo span-gInfo--gName">
+                {{ shortenStr(scope.row.goods.gName, 23) }}
+              </span>
+            </el-tooltip>
+            <span class="span-gInfo span-gInfo--gType">
+              [{{ gTypeOptions[scope.row.goods.gType] }}]
+            </span>
+            <span class="span-gInfo span-gInfo--gPrice">
+              ￥{{ scope.row.goodsPrice }}<b>&nbsp;×&nbsp;{{ scope.row.oNum }}</b>
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="金额" :width="oWidths[1]"
+          :show-overflow-tooltip="true">
+          <template slot-scope="scope">
+            {{ scope.row.goodsPrice * scope.row.oNum }}
+          </template>
+        </el-table-column>
+        <el-table-column label="商品状态" :width="oWidths[2]" prop="goods.gState" sortable>
+          <template slot-scope="scope">
+            <span :class="{
+                'state-on': scope.row.goods.gState===1,
+                'state-off': scope.row.goods.gState===2
+              }">
+              {{ gStateOptions[scope.row.goods.gState] }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="订单状态" :width="oWidths[3]" prop="oState" sortable>
+          <template slot-scope="scope">
+            <span :class="{
+                'order-s2': scope.row.oState===2,
+                'order-s3': scope.row.oState===3
+              }">
+              {{ scope.row.oState===2?'已支付':'已收货' }}
+              <!-- {{scope.row.gState}} -->
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="时间" :width="oWidths[4]" prop="oTime" sortable
+          :show-overflow-tooltip="true">
+          <template slot-scope="scope">
+            {{ scope.row.oTime.slice(0, 16) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" :width="oWidths[5]">
+          <template slot-scope="scope">
+            <span @click="browseGoods(scope.row.goods)"
+              v-if="scope.row.goods.gState===1"
+              class="span-click">
+              查看商品
+            </span>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    
+  </div>
+</body>
+<script>
+new Vue({
+  el: '#user-my',
+  data () {
+    let validateMail = (rule, value, callback) => {
+      // 验证邮箱格式和邮箱是否已被注册
+      let mailReg = /^[a-zA-Z0-9_-]+@([a-zA-Z0-9]+\.)+(com|cn|net|org)$/
+      if(value === '') {
+        callback(new Error('请输入新邮箱'))
+      } else if(!mailReg.test(value)){
+        callback(new Error('请输入有效邮箱格式：支持com、cn、net、org后缀'))
+      } else if(value !== this.init_userInfo.uMail) {
+        // 调api查邮箱是否被注册
+        let params = new URLSearchParams({
+          umail: value
+        })
+        axios.post('/check-umail', params)
+        .then(function(res){
+          if(res.data.exist===0) {         // 邮箱不存在，可修改
+            callback()
+          } else if(res.data.exist===1) {  // 邮箱存在，不可修改
+            callback(new Error('邮箱已被注册'))
+          } else {
+            callback(new Error('查询失败'))
+          }
+        }).catch(function(err) {
+          console.log(err)
+          callback(new Error('查询失败'))
+          //ctx.$message({ type: 'error', message: 'regCheckAttach()请求失败', duration: 1000 })
+        })
+      } else {
+        callback()
+      }
+    }
+    let validatePwd2 = (rule, value, callback) => {
+      if(this.userInfo.uPwd === '') {
+        if(value !== '') {
+          callback(new Error('请先输入新密码再确认'))
+        } else {
+          callback()
+        }
+      } else {
+        if(value !== this.userInfo.uPwd) {
+          callback(new Error('两次输入密码不一致'))
+        } else {
+          callback()
+        }
+      }
+    }
+    return {
+      activeIndex: '1',
+      // ----------- 个人资料 ---------------------------
+      userInfo: null,
+      init_userInfo: null,  // new：保存修改前的userInfo
+      rules: {
+        uMail: [ { validator: validateMail, trigger: 'blur' } ],
+        uPwd2: [ { validator: validatePwd2, trigger: 'blur' } ]
+      },
+      // ----------- 我的足迹 ---------------------------
+      browseList: [],
+      tWidths: [400, 90, 240, 120],
+      // ----------- 我的订单 ---------------------------
+      orderList: [],
+      oWidths: [300, 90, 120, 120, 150, 150], // 订单信息、金额、商品状态、订单状态、时间、操作
+    }
+  },
+  methods: {
+    handleSelect(key, keyPath) {
+      this.activeIndex = key
+      console.log('handleSelect: ', key, 'activeIndex=', this.activeIndex)
+      if(key==='2') {
+        this.loadBrowse()
+      } else if(key==='3') {
+        this.loadOrder()
+      }
+    },
+    //checkUMail(val) {   // 检查邮箱是否已存在
+    //},
+// ------------------------------ 个人资料 ----------------------------------------------
+    randUBalance() { // uBalance加上产生随机45的倍数（0-10倍）
+      // .once只能一次
+      let plus = 45*this.$getRandomNum(0,10)
+      this.$message({
+        type: 'success',
+        message: '恭喜，余额增加了'+plus,
+        duration: 1000
+      })
+      this.userInfo.uBalance += plus
+    },
+    submitEditProfile(formName) {
+      this.$refs[formName].validate((valid) => {
+        if(valid) { // 调用api修改资料
+          let ctx = this
+          let uPwd = this.init_userInfo.uPwd  // 修改前的密码
+          if(this.userInfo.uPwd !== '' && this.userInfo.uPwd !== uPwd) {  // 修改了密码
+            // 修改了密码
+            uPwd = this.userInfo.uPwd
+          }
+          let uMail = this.init_userInfo.uMail  // 修改前的邮箱
+          if(this.userInfo.uMail !== '' && this.userInfo.uMail !== uMail) { // 修改了邮箱
+            // 修改了邮箱
+            uMail = this.userInfo.uMail
+          }
+          let params = new URLSearchParams({
+            // uId: this.init_userInfo.uId,
+            uMail: uMail,
+            uPwd: uPwd,
+            uBalance: this.userInfo.uBalance
+          })
+          axios.post('/user-edit-profile', params)
+          .then(function(res){
+            if(res.data.success===1) {
+              ctx.$message({ type: 'success', message: '资料保存成功', duration: 1500 })
+              /*let user = {
+                uId: getSessUser().uId,
+                uName: getSessUser().uName,
+                uMail: uMail,
+                uPwd: uPwd,
+                uBalance: ctx.userInfo.uBalance
+              }
+              userLogin(user)*/
+              ctx.$nextTick(()=>{
+                // new：更新init_userInfo
+                // ctx.init_userInfo = JSON.parse(JSON.stringify(ctx.userInfo))
+                ctx.$set(ctx.init_userInfo, 'uMail', uMail)
+                ctx.$set(ctx.init_userInfo, 'uPwd', uPwd)
+                ctx.$set(ctx.init_userInfo, 'uBalance', ctx.userInfo.uBalance)
+                
+                ctx.userInfo.uPwd = ''
+                ctx.userInfo.uPwd2 = ''
+              })
+            } else {
+              ctx.$message({ type: 'error', message: '资料保存失败', duration: 1500 })
+              if(res.data.isLogin === 0) {
+                // 跳转到login
+                top.location.href = 'login.html'
+              }
+            }
+          }).catch(function(err) {
+            console.log(err)
+            ctx.$message({ type: 'error', message: 'submitEditProfile()请求失败', duration: 1000 })
+            // ctx.$nextTick(()=>{})
+          })
+        }
+      })
+    },
+    cancelEdit() {
+      /*
+      this.userInfo = {
+        uId: getSessUser().uid,
+        uName: getSessUser().uName,
+        uMail: getSessUser().uMail,
+        uPwd: '',
+        uPwd2: '',
+        uBalance: getSessUser().uBalance
+      }
+      */
+      this.userInfo = {
+        uId: this.init_userInfo.uid,
+        uName: this.init_userInfo.uName,
+        uMail: this.init_userInfo.uMail,
+        uPwd: '',
+        uPwd2: '',
+        uBalance: this.init_userInfo.uBalance,
+      }
+    },
+// ------------------------------ 我的足迹 & 我的订单 ----------------------------------------------
+    loadBrowse() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        //uId: getSessUser().uId,
+        uId: this.init_userInfo.uId,
+      })
+      axios.post('/user-load-browse', params)
+      .then(function(res){
+        // console.log(res.data)
+        if(res.data.isLogin === 1) {
+          ctx.$nextTick(()=>{
+            ctx.browseList = res.data.browseList  // 其中可能有gState=2的
+            for(var i=0; i<ctx.browseList.length; i++) {
+              if(ctx.browseList[i].goods.gImg!=='')
+                ctx.browseList[i].goods.gImg = 'img/goods/'+ctx.browseList[i].goods.gId+ctx.browseList[i].goods.gImg
+            }
+            //console.log(JSON.stringify(ctx.browseList))
+          })
+        } else {
+          top.location.href = 'login.html'
+        }
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+    browseGoods(goods) {
+      // gState=2的不允许访问！！！
+      // window.location.href = 'user/goods.html'
+      let ctx =  this
+      let params = new URLSearchParams({
+        // uId: getSessUser().uId,
+        gId: goods.gId
+      })
+      axios.post('/browse-goods', params)
+      .then(function(res){
+        console.log('success: ', res.data.success)
+        // ctx.$nextTick(()=>{})
+        // 将goodsList[i]的内容存入sessionStorage
+        recordGoods(goods)
+        window.location.href = 'user/goods.html'
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'browseGoods()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+    loadOrder() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        // uId: getSessUser().uId,
+        // uId: this.init_userInfo.uId,
+        arg: 2,
+      })
+      axios.post('/user-load-order', params)
+      .then(function(res){
+        // console.log(res.data)
+        if(res.data.isLogin === 1) {
+          ctx.$nextTick(()=>{
+            if(res.data.orderList!==null) {
+              ctx.orderList = res.data.orderList
+              for(var i=0; i<ctx.orderList.length; i++) {
+                if(ctx.orderList[i].goods.gImg!=='')
+                  ctx.orderList[i].goods.gImg = 'img/goods/'+ctx.orderList[i].goods.gId+ctx.orderList[i].goods.gImg
+              }
+            }
+            else
+              ctx.orderList = []
+          })
+        } else {
+          ctx.$message({ type: 'warning', message: 'loadOrder()：用户未登录', duration: 3000 })
+          top.location.href = 'login.html'
+        }
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'loadOrder()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+    // 增加getCurrentUser(), created时调用 => 用于设置 this.userInfo
+    getCurrentUser() {  // 获取当前登录的用户
+      let ctx = this
+      let params = new URLSearchParams({
+        arg: 1,   // 对应用户登录arg=1，arg=2表示发行方
+      })
+      axios.post('/get-current-user', params)
+      .then(function(res){
+        if(res.data.isLogin === 1) {
+          let user = res.data.user
+          ctx.$nextTick(()=>{
+            ctx..userInfo = {
+              uId: user.uId,
+              uName: user.uName,
+              uMail: user.uMail,
+              uPwd: '',
+              uPwd2: '',
+              uBalance: user.uBalance,
+            }
+            // 深复制一份
+            ctx.init_userInfo = JSON.parse(JSON.stringify(ctx.userInfo)) 
+          })
+        } else {
+          top.location.href = 'login.html'
+        }
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'getCurrentUser()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+    
+// -------------------------------------------------------------------------
+    axiosUtil() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        xxx: 0
+      })
+      axios.post('/...', params)
+      .then(function(res){
+        // console.log(res.data)
+        // ctx.$nextTick(()=>{})
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    }
+  },
+  created() {
+    // user/index.html设置，从「用户名」进入该页面能保证用户已登录
+    this.getCurrentUser()
+    
+    /*
+    if(getSessUser()!==null)
+      this.userInfo = {
+        uId: getSessUser().uid,
+        uName: getSessUser().uName,
+        uMail: getSessUser().uMail,
+        uPwd: '',
+        uPwd2: '',
+        uBalance: getSessUser().uBalance
+      }
+    */
+    
+  }
+})
+</script>
+</html>

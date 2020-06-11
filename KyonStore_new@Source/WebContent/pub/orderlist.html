@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <base href="../">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Pub Order List</title>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/elem-index.css">
+  <!-- import jQuery -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- import Vue before Element -->
+  <script src="js/vue-2.6.10.min.js"></script>
+  <!-- import axios -->
+  <script src="js/axios-0.19.0.min.js"></script>
+  <!-- import JavaScript -->
+  <script src="js/elem-index.js"></script>
+  <!-- import global.js -->
+  <script src="js/global.js"></script>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/pub/orderlist.css">
+</head>
+<body>
+  <div id="pub-orderlist">
+    <!-- [main:orderlists]当前登录发行方:{{getSessUser()===null?'null':getSessUser().pName}} -->
+    <el-table :data="orderList" stripe class="orderList-table">
+      <el-table-column label="订单信息" :width="tWidths[0]">
+        <template slot-scope="scope">
+          <el-tooltip effect="dark" placement="top-start" :content="scope.row.goods.gName">
+            <span :class="{
+              'span-gInfo': true,
+              'span-gInfo--gName': true,
+              'span-gInfo--off': scope.row.goods.gState===2
+            }">
+              {{ shortenStr(scope.row.goods.gName, 23) }}
+            </span>
+          </el-tooltip>
+          <span :class="{
+            'span-gInfo': true,
+            'span-gInfo--gType': true,
+            'span-gInfo--off': scope.row.goods.gState===2
+          }">
+            [{{ gTypeOptions[scope.row.goods.gType] }}]
+          </span>
+          <span :class="{
+            'span-gInfo': true,
+            'span-gInfo--gPrice': true,
+            'span-gInfo--off': scope.row.goods.gState===2
+          }">
+            ￥{{ scope.row.goodsPrice }}&nbsp;×&nbsp;<b>{{ scope.row.oNum }}</b>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="金额" :width="tWidths[1]"
+        :show-overflow-tooltip="true">
+        <template slot-scope="scope">
+          {{ scope.row.goodsPrice * scope.row.oNum }}
+        </template>
+      </el-table-column>
+      <el-table-column label="订单状态" :width="tWidths[2]" prop="oState" sortable>
+        <template slot-scope="scope">
+          <span :class="{
+              'state-on': scope.row.oState===2,
+              'state-off': scope.row.oState===3
+            }">
+            {{ scope.row.oState===2?'待处理':'已处理' }}
+            <!-- {{scope.row.gState}} -->
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="订购者" :width="tWidths[3]"
+        :show-overflow-tooltip="true">
+        <template slot-scope="scope">
+          {{ scope.row.user.uName }}
+        </template>
+      </el-table-column>
+      <el-table-column label="时间" :width="tWidths[4]" prop="oTime" sortable
+        :show-overflow-tooltip="true">
+        <template slot-scope="scope">
+          {{ scope.row.oTime.slice(0, 16) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" :width="tWidths[5]">
+        <template slot-scope="scope">
+          <span @click="updateOrder(scope.row)"
+            v-if="scope.row.oState===2"
+            class="span-click span-click--confirm">
+            确认并发货
+          </span>
+        </template>
+      </el-table-column>
+    </el-table>
+    
+    
+  </div>
+</body>
+<script>
+new Vue({
+  el: '#pub-orderlist',
+  data () {
+    return {
+      orderList: [],
+      tWidths: [300, 90, 120, 120, 150, 120],  // 订单信息、金额、订单状态、订购者、时间、操作
+    }
+  },
+  methods: {
+    loadOrder() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        // pUid: getSessUser().pUid
+      })
+      axios.post('/pub-load-order', params)
+      .then(function(res){
+        // console.log(res.data)
+        if(res.data.isLogin === 2) {
+          ctx.$nextTick(()=>{
+            ctx.orderList = res.data.orderList
+          })
+        } else {
+          // 发行方登录信息已失效
+          top.location.href = 'login.html'
+        }
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'loadOrder()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+    updateOrder(row) {
+      console.log('update order: ', row.oId)
+      let ctx =  this
+      let params = new URLSearchParams({
+        oId: row.oId,
+        arg: 3,
+      })
+      axios.post('/update-order', params)
+      .then(function(res){
+        // console.log(res.data)
+        if(res.data.success===1){
+          ctx.$message({ type: 'success', message: '操作成功', duration: 1500 })
+          row.oState = 3
+        } else {
+          ctx.$message({ type: 'error', message: '操作失败', duration: 1500 })
+          if(res.data.isLogin === 0) {
+            // 发行方登录信息已失效
+            top.location.href = 'login.html'
+          }
+        }
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'updateOrder()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+// ------------------------------------------------------------------------------------------------------
+    axiosUtil() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        xxx: 0
+      })
+      axios.post('/...', params)
+      .then(function(res){
+        // console.log(res.data)
+        // ctx.$nextTick(()=>{})
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    }
+  },
+  created() {
+    // console.log('created() in order.jsp: ', (getSessUser()===null?'null':getSessUser().pName))
+    
+    this.loadOrder()  // 加载所有订单
+  }
+})
+</script>
+</html>

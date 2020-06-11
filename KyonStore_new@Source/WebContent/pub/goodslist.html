@@ -1,0 +1,488 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <base href="../">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Pub Goods List</title>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/elem-index.css">
+  <!-- import jQuery -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <!-- import Vue before Element -->
+  <script src="js/vue-2.6.10.min.js"></script>
+  <!-- import axios -->
+  <script src="js/axios-0.19.0.min.js"></script>
+  <!-- import JavaScript -->
+  <script src="js/elem-index.js"></script>
+  <!-- import global.js -->
+  <script src="js/global.js"></script>
+  <!-- import CSS -->
+  <link rel="stylesheet" href="css/pub/goodslist.css">
+
+</head>
+<body>
+  <div id="pub-goodslist">
+    <!--[main:goodlists]当前登录发行方:{{getSessUser()===null?'null':getSessUser().pName}}-->
+    <div id="search-div">
+      <div class="search-sub-div" id="search-input">
+        <el-input v-model="searchInfo.gName" size="mini"
+          class="search-gName"
+          placeholder="商品名称" :clearable="true"
+          >
+        </el-input>
+        <span id="search-btn" @click="doSearch">搜索</span>
+      </div>
+      <div class="search-sub-div" id="search-filter">
+        <el-select v-model="searchInfo.gType" placeholder="商品类型"
+          class="search-item"
+          @change="gTypeChange"
+          size="mini">
+          <el-option v-for="item in gTypeOptions" 
+            :key="item" :label="item" :value="item"
+            ></el-option>
+        </el-select>
+        <el-date-picker v-model="searchInfo.gPubTime" placeholder="发行月份"
+          class="search-item"
+          @change="gPubTimeChange"
+          value-format="yyyy-MM"
+          type="month" size="mini"
+          ></el-date-picker>
+        <el-select v-model="searchInfo.gState" placeholder="商品状态"
+          class="search-item"
+          @change="gStateChange"
+          size="mini">
+          <el-option v-for="item in gStateOptions"
+            :key="item" :label="item" :value="item"
+            ></el-option>
+        </el-select>
+      </div>
+    </div>
+    <div id="search-res-div">
+      <el-table :data="goodsList" stripe width="1080" class="goodlist-table">
+        <el-table-column label="商品名称" :width="tWidths[0]" prop="gName" sortable
+          :show-overflow-tooltip="true">
+          <template slot-scope="scope">
+            <span @click="checkGoods(scope.row)" class="span-click">
+              {{scope.row.gName}}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="类型" :width="tWidths[1]" prop="gType" sortable>
+          <template slot-scope="scope">
+            <span>
+              {{ gTypeOptions[scope.row.gType] }}
+              <!-- {{scope.row.gType}} -->
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" :width="tWidths[2]" prop="gState" sortable>
+          <template slot-scope="scope">
+            <span :class="{
+                'state-on': scope.row.gState===1,
+                'state-off': scope.row.gState===2
+              }">
+              {{ gStateOptions[scope.row.gState] }}
+              <!-- {{scope.row.gState}} -->
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="单价" :width="tWidths[3]" prop="gPrice" sortable>
+        </el-table-column>
+        <el-table-column label="浏览量" :width="tWidths[4]" prop="gBrowse" sortable>
+        </el-table-column>
+        <el-table-column label="销售量" :width="tWidths[5]" prop="gSell" sortable>
+        </el-table-column>
+        <el-table-column label="成交额" :width="tWidths[6]" prop="gVolume"  sortable>
+          <!-- <template slot-scope="scope"> -->
+            <!-- <span> {{ scope.row.gPrice * scope.row.gSell }}</span> -->
+          <!-- </template> -->
+        </el-table-column>
+        <el-table-column label="发行时间" :width="tWidths[7]" prop="gPubTime" sortable>
+          <template slot-scope="scope">
+            <span>
+              {{ scope.row.gPubTime.split(' ')[0] }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" :width="tWidths[8]">
+          <template slot-scope="scope">
+            <span @click="checkGoods(scope.row)"
+              :class="{
+                'span-click': true,
+                'span-edit': true,
+                'span-offed': scope.row.gState===2
+              }">修改</span>
+
+            <span @click="offGoods(scope.row)"
+              :class="{
+                'span-click': true,
+                'span-off': true,
+                'span-offed': scope.row.gState===2
+              }">下架</span>
+            
+            <!--<span @click="goodsRepo(scope.row)"
+              class="span-click span-repo">报表</span>-->
+          </template>
+        </el-table-column>
+        
+      </el-table>
+    </div>
+    <el-dialog id="goodsInfo" title="商品详情" :visible.sync="diaVis"
+      @close="onDiaClose" center>
+      <el-form :model="sGoods" ref="sGoods" :rules="rules"
+        label-width="80px" size="mini">
+        <el-form-item label="商品图片" style="margin-bottom: 0;">
+          <el-upload class="upload-avatar"
+            action=""
+            :on-change="onFileChange"
+            :on-remove="onFileRemove"
+            :file-list="fileList"
+            :auto-upload="false"
+            list-type="picture-card"
+            accept="image/jpeg,image/x-png"
+            :multiple="false"
+            :limit="1">
+            <i slot="default" class="el-icon-plus"></i>
+            <!-- <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div> -->
+          </el-upload>
+          <font class="upload-avatar-tip">
+            只能上传jpg/png文件，且不超过2MB
+          </font>
+        </el-form-item>
+        <el-form-item label="商品名称" prop="gName">
+          <el-input v-model="sGoods.gName" :disabled="sGoods.gState===2"></el-input>
+        </el-form-item>
+        <el-form-item label="商品描述" prop="gInfo">
+          <el-input v-model="sGoods.gInfo" :disabled="sGoods.gState===2"></el-input>
+        </el-form-item>
+        <el-form-item label="商品类型" prop="gType">
+          <el-select v-model="sGoods.gType" placeholder="商品类型"
+            size="mini" :disabled="sGoods.gState===2">
+            <el-option v-for="item in gTypeOptions.slice(1,6)" 
+              :key="item" :label="item" :value="item"
+              ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="商品单价" prop="gPrice">
+          <el-input v-model="sGoods.gPrice" :disabled="sGoods.gState===2"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitEditGoods('sGoods')">修改</el-button>
+        <el-button @click="diaVis = false" v-if="sGoods.gState===1">取消</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</body>
+<script>
+new Vue({
+  el: '#pub-goodslist',
+  data () {
+    //var checkPrice = ...  // 写进globals.js中
+    return {
+      searchInfo: {
+        gType: '所有类型',  // 上传参数对应gTypeOptions的index
+        gPubTime: '',       // yyyy-MM
+        gState: '上架中',   // 上传参数对应gStateOptions的index，默认1
+        gName: ''
+      },
+      //gTypeOptions: ['所有类型','电影','剧集','单集','专辑','单曲'],
+      //gStateOptions: ['全部','上架中','已下架'],
+      goodsList: [],
+      tWidths: [400, 90, 90, 90, 90, 90, 90, 120, 120],
+      sGoods: {
+        gId: '', gName: '', gInfo: '', gType: '', gPubTime: '', gPrice: 0.00,
+        gBrowse: 0, gSell: 0, gState: 0,
+        pub: { pUid: '', pName: '', pPwd: '', pInfo: '' }
+      },   // selectedGoods
+      sGoods_bak: {},
+      diaVis: false,
+      rules: {
+        gName: [
+          { required: true, message: '请输入商品名称', trigger: 'blur' }
+        ],
+        gType: [
+          { required: true, message: '请选择商品类型', trigger: 'blur' }
+        ],
+        gPrice: [
+          { validator: checkPrice, trigger: 'blur' },
+          { required: true, message: '请输入商品单价', trigger: 'blur' },
+          // { type: "float", message: '商品单价应为数字值', trigger: 'blur' }
+          // number数字，integer整数，float浮点数
+        ]
+      },
+  // -----------------------------------
+      fileList: [],
+      fileListCnt: 0,
+    }
+  },
+  methods: {
+    gTypeChange(val) {
+      // console.log('gType=>', this.searchInfo.gType)
+      this.doSearch()
+    },
+    gPubTimeChange(val) {
+      if(val===null)
+        this.searchInfo.gPubTime = ''
+      // console.log('gPubTime=>', this.searchInfo.gPubTime)
+      this.doSearch()
+    },
+    gStateChange(val) {
+      // console.log('gState=>', this.searchInfo.gState)
+      this.doSearch()
+    },
+    doSearch() {
+      let gType = gTypeOptions.indexOf(this.searchInfo.gType)
+      let gState = gStateOptions.indexOf(this.searchInfo.gState)
+      console.log('doSearch: [gType='+gType
+                  +',gPubTime='+this.searchInfo.gPubTime
+                  +',gState='+gState
+                  +',gName='+this.searchInfo.gName+']')
+      let ctx =  this
+      let params = new URLSearchParams({
+        // pUid: getSessUser().pUid,
+        gType: gType,
+        gPubTime: this.searchInfo.gPubTime,
+        gState: gState,
+        gName: this.searchInfo.gName,
+        isUserSearch: 0,
+      })
+      axios.post('/pub-search-goods', params)
+      .then(function(res){
+        // console.log(res.data)
+        if(res.data.isLogin === 2) {
+          // 发行方登录中
+          ctx.$nextTick(()=>{
+            if(res.data!==null) {
+              ctx.goodsList = res.data.data
+            }
+            else
+              ctx.goodsList = []
+          })
+          // console.log(ctx.goodsList)
+        } else {
+          ctx.$message({ type: 'error', message: 'doSearch()：发行方未登录', duration: 1000 })
+          top.location.href = 'login.html'
+        }
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: 'doSearch()请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    },
+// ------------------------------------------------------------------------------------------------------
+    checkGoods(row) {
+      console.log('check Goods: ', row.gName)
+      this.sGoods = {  // 深复制
+        gId: row.gId,
+        gName: row.gName,
+        gInfo: row.gInfo,
+        gType: gTypeOptions[row.gType],
+        gPrice: row.gPrice,
+        gState: row.gState
+      }
+      this.diaVis = true
+    },
+    offGoods(row) {
+      if(row.gState!==1) return
+      let r = confirm('确认下架该商品吗？')
+      if(r) { // 确认下架商品
+        console.log('confirm off Goods: ', row.gName)
+        let ctx =  this
+        let params = new URLSearchParams({
+          gId: row.gId,
+        })
+        axios.post('/pub-off-goods', params)
+        .then(function(res){
+          // console.log(res.data)
+          if(res.data.gState===2) {  // 下架成功
+            // 写回goodsList
+            for(var i=0; i<ctx.goodsList.length; i++) {
+              if(ctx.goodsList[i].gId===row.gId) {
+                ctx.goodsList[i].gState = 2
+              }
+            }
+            ctx.$message({ type: 'success', message: '商品下架成功', duration: 1500 })
+          } else {
+            ctx.$message({ type: 'error', message: '商品下架失败', duration: 1500 })
+            if(res.data.isLogin === 0) {
+              top.location.href = 'login.html'
+            }
+          }
+          // ctx.$nextTick(()=>{})
+        }).catch(function(err) {
+          console.log(err)
+          ctx.$message({ type: 'error', message: 'offGoods()请求失败', duration: 1000 })
+          // ctx.$nextTick(()=>{})
+        })
+      } else {
+        console.log('cancel off Goods: ', row.gName)
+      }
+    },
+    goodsRepo(row) {
+      console.log('goods Repo: ', row.gName)
+    },
+// ------------------------------------------------------------------------------------------------------
+    onFileChange (file, fileList) {
+      let limit = this.$limitFile(file)
+      if(limit === 0) {  // 新上传的文件符合要求
+        this.fileList = fileList
+        this.fileListCnt = this.fileList.length
+      } else {
+        if(limit === 1)
+          this.$message.error('上传图片只能是 JPG 或 PNG 格式!')
+        else if(limit === 2)
+          this.$message.error('上传图片大小不能超过 2MB!')
+        console.log('fileList.length: ' + fileList.length)
+        fileList.pop()  // 阻止上传
+      }
+      console.log('[onFileChange]: ' + typeof fileList[0] + '| this.fileListCnt: ' + this.fileListCnt)
+    },
+    onFileRemove (file, fileList) {
+      this.fileList = fileList
+      this.fileListCnt = this.fileList.length
+      console.log('[onFileRemove]: this.fileListCnt: ' + this.fileListCnt)
+    },
+    emptyFileList() {
+      // 清空fileList
+      for(var i=0; i<this.fileList.length; i++) {
+        this.fileList.pop()
+      }
+      this.fileListCnt = this.fileList.length // =0
+    },
+    submitEditGoods(formName) {
+      this.$refs[formName].validate ((valid) => {
+        if(valid) {
+          let ind = -1
+          for(var i=0; i<this.goodsList.length; i++) {
+            if(this.goodsList[i].gId===this.sGoods.gId) {
+              ind = i
+              break
+            }
+          }
+          console.log('sGoods index: ', ind)
+          // 调用api修改商品信息
+          let infoEdited = (ind !== -1 &&
+             (this.goodsList[ind].gName !== this.sGoods.gName
+             || this.goodsList[ind].gInfo !== this.sGoods.gInfo
+             || this.goodsList[ind].gType !== gTypeOptions.indexOf(this.sGoods.gType)
+             || this.goodsList[ind].gPrice !== this.sGoods.gPrice))
+          if (infoEdited) { console.log('商品信息已修改') }
+          if (infoEdited || this.fileList.length > 0){
+            // 进行了修改        
+            console.log('submit Edit Goods: ', this.sGoods.gName)
+            let ctx =  this
+            /* // ver-nonPic
+            let params = new URLSearchParams({
+              gId: this.sGoods.gId,
+              gName: this.sGoods.gName,
+              gInfo: this.sGoods.gInfo,
+              gType: gTypeOptions.indexOf(this.sGoods.gType),
+              gPrice: this.sGoods.gPrice
+            })*/
+            let formData = new FormData()
+            if(this.fileList.length > 0) {
+              this.fileList.forEach (file => {
+                formData.append('files', file.raw)
+              })
+            }
+            formData.append('gId', this.sGoods.gId)
+            formData.append('gName', this.sGoods.gName)
+            formData.append('gInfo', this.sGoods.gInfo)
+            formData.append('gType', gTypeOptions.indexOf(this.sGoods.gType))
+            formData.append('gPrice', this.sGoods.gPrice)
+            
+            // axios.post('/pub-edit-goods', params) // ver-nonPic
+            axios({
+              method: 'post', url: '/pub-edit-goods-1',
+              headers: {
+                'Content-Type': 'multipart/form-data;'
+              },
+              data: formData
+            })
+            .then(function(res){
+              // console.log(res.data)
+              if(res.data.success===1) { // 修改成功
+                // 写回goodsList
+                for(var i=0; i<ctx.goodsList.length; i++) {
+                  if(ctx.goodsList[i].gId===ctx.sGoods.gId) {
+                    ctx.goodsList[i].gName = ctx.sGoods.gName
+                    ctx.goodsList[i].gInfo = ctx.sGoods.gInfo
+                    ctx.goodsList[i].gType = gTypeOptions.indexOf(ctx.sGoods.gType)
+                    ctx.goodsList[i].gPrice = ctx.sGoods.gPrice
+                  }
+                }
+                ctx.$message({ type: 'success', message: '商品信息修改成功', duration: 1500 })
+              } else {
+                ctx.$message({ type: 'error', message: '商品信息修改失败', duration: 1500 })
+                if(res.data.isLogin === 0) {
+                  // 发行方登录信息失效，跳转到登录页面
+                  top.location.href = 'login.html'
+                }
+              }
+              ctx.emptyFileList()
+              ctx.diaVis = false
+              // ctx.$nextTick(()=>{})
+            }).catch(function(err) {
+              console.log(err)
+              ctx.$message({ type: 'error', message: 'submitEditGoods()请求失败', duration: 1000 })
+              // ctx.$nextTick(()=>{})
+            })
+          } else {
+            // 没有修改
+            this.diaVis = false
+          }
+        } else {
+          console.log('表单验证不通过')
+        }
+      })
+      // window.location.reload() // goodslist.html刷新
+    },
+    //onDiaOpen() { console.log('dialog Open') },
+    onDiaClose() {
+      this.emptyFileList()
+    },
+// ------------------------------------------------------------------------------------------------------
+    isPrice (val) {
+      let reg = /^\d+(\.\d{1,2})?$/
+      return reg.test(val)
+    },
+// ------------------------------------------------------------------------------------------------------
+    axiosUtil() {
+      let ctx =  this
+      let params = new URLSearchParams({
+        xxx: 0
+      })
+      axios.post('/...', params)
+      .then(function(res){
+        // console.log(res.data)
+        // ctx.$nextTick(()=>{})
+      }).catch(function(err) {
+        console.log(err)
+        ctx.$message({ type: 'error', message: '请求失败', duration: 1000 })
+        // ctx.$nextTick(()=>{})
+      })
+    }
+  },
+  watch: {
+    fileListCnt: function (val, oldVal) {
+      if(val >= 1) {
+        // 图片上传数量 >= 1时，不允许继续上传
+        let e = $(".el-upload--picture-card")
+        e.css('display','none')
+      } else {
+        let e = $(".el-upload--picture-card")
+        e.css('display','inline-block')
+      }
+    },
+  },
+  created(){
+    // console.log('created() in goodslist.jsp: ', (getSessUser()===null?'null':getSessUser().pName))
+    
+    this.doSearch() // 自动调一次，查全部
+    
+  }
+})
+</script>
+</html>
